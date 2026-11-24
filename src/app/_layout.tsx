@@ -1,18 +1,21 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import '@/global.css';
+import * as Sentry from '@sentry/react-native';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { connectivityRepository } from '@/modules/sincronizacion/data/repositories/connectivityRepository';
+import { observeConnectivity } from '@/modules/sincronizacion/domain/usecases/observeConnectivity';
+import { useConnectivityMonitor } from '@/modules/sincronizacion/presentation/useConnectivityMonitor';
+import { useSincronizarActas } from '@/modules/sincronizacion/presentation/useSincronizarActas';
+import { initializeMonitoring } from '@/shared/monitoring/sentry';
+import RootLayout from '@/shared/presentation/RootLayout';
 
-SplashScreen.preventAutoHideAsync();
+initializeMonitoring();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
-  );
+const observeNetwork = observeConnectivity(connectivityRepository);
+
+function ExpoRootLayout() {
+  useConnectivityMonitor(observeNetwork);
+  useSincronizarActas();
+  return <RootLayout />;
 }
+
+export default Sentry.wrap(ExpoRootLayout);
