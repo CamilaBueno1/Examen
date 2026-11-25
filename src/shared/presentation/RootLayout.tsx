@@ -1,14 +1,17 @@
 import { DefaultTheme, ThemeProvider, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { useFonts } from 'expo-font';
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { Colors } from '@/constants/theme';
 
 import { restaurarSesion } from '@/modules/authentication/presentation/authUseCaseProvider';
 import { useSessionStore } from '@/modules/authentication/presentation/sessionStore';
 import { StatusBanner } from './Ui';
+import ElectionMotion from './ElectionMotion';
 
-SplashScreen.preventAutoHideAsync();
+void SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function SessionStack() {
   const [attempt, setAttempt] = useState(0);
@@ -32,8 +35,9 @@ function SessionStack() {
   if (!hydrated) {
     return (
       <View className="flex-1 items-center justify-center bg-brand-paper px-6">
-        <ActivityIndicator size="large" color="#15464B" />
-        <Text className="mt-4 text-base font-semibold text-brand-ink">Preparando el acceso seguro…</Text>
+        <ElectionMotion scene="voting" size={164} loop />
+        <Text className="font-electoral-bold mt-4 text-lg text-brand-ink">Control Electoral</Text>
+        <Text className="font-electoral mt-1 text-sm text-brand-muted">Preparando el acceso seguro…</Text>
       </View>
     );
   }
@@ -59,7 +63,7 @@ function SessionStack() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#F6F5F0' },
+        contentStyle: { backgroundColor: Colors.light.background },
         animation: 'fade',
       }}
     />
@@ -67,14 +71,28 @@ function SessionStack() {
 }
 
 export default function RootLayout() {
-  useEffect(() => {
-    void SplashScreen.hideAsync();
-  }, []);
+  const [fontsLoaded, fontError] = useFonts({
+    LatoRegular: require('../../../assets/fonts/Lato-Regular.ttf'),
+    LatoBold: require('../../../assets/fonts/Lato-Bold.ttf'),
+  });
+  const splashDismissed = useRef(false);
 
   return (
     <ThemeProvider value={DefaultTheme}>
       <StatusBar style="dark" />
-      <SessionStack />
+      <View
+        style={{ flex: 1, backgroundColor: Colors.light.background }}
+        onLayout={() => {
+          if (splashDismissed.current) return;
+          splashDismissed.current = true;
+          void SplashScreen.hideAsync().catch(() => {});
+        }}>
+        {fontsLoaded || fontError ? <SessionStack /> : (
+          <View className="flex-1 items-center justify-center px-6">
+            <Text className="text-base font-bold text-brand-ink">Preparando Control Electoral…</Text>
+          </View>
+        )}
+      </View>
     </ThemeProvider>
   );
 }

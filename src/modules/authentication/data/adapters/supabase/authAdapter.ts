@@ -5,11 +5,38 @@
  */
 
 import { supabase } from '@/shared/data/supabaseClient';
-import { FunctionsHttpError } from '@supabase/supabase-js';
+import { isNetworkFailure } from '@/shared/data/networkFailure';
+import { FunctionsHttpError, isAuthRetryableFetchError } from '@supabase/supabase-js';
 import NetInfo from '@react-native-community/netinfo';
 import { SqliteAuthDao } from '../sqlite/authDao';
 import { AuthRepository } from '../../../domain/repositories';
 import { User } from '../../../domain/entities';
+
+const connectionRequired = 'Conéctate a internet para iniciar sesión. Para trabajar sin conexión, deja abierta una sesión ya activada y descarga tus mesas antes de desconectarte.';
+
+async function isOffline(): Promise<boolean> {
+  const network = await NetInfo.fetch().catch(() => null);
+  return network?.isConnected === false || network?.isInternetReachable === false;
+}
+
+function isAuthNetworkFailure(error: { message: string }): boolean {
+  return isAuthRetryableFetchError(error) || isNetworkFailure(error);
+}
+
+const accountCreationMessages: Readonly<Record<string, string>> = {
+  AUTH_REQUIRED: 'Tu sesión expiró. Vuelve a iniciar sesión e intenta de nuevo.',
+  PERMISO_REVOCADO: 'Tu cuenta no tiene permiso para registrar personas en la mesa o recinto seleccionado.',
+  INVALID_INPUT: 'Revisa la cédula, los datos de contacto y la mesa o recinto seleccionado.',
+  CEDULA_ALREADY_REGISTERED: 'Esta cédula ya está registrada. Si la persona ya es veedora, usa Asignar para gestionar sus mesas.',
+  EMAIL_ALREADY_REGISTERED: 'Este correo ya pertenece a una cuenta. Revisa si la persona ya está registrada o si escribió otro correo.',
+  INVALID_ACCOUNT_EMAIL: 'Supabase no aceptó este correo. Revisa que esté bien escrito.',
+  ACCOUNT_CREATION_RATE_LIMITED: 'Se hicieron demasiadas solicitudes. Espera un momento y vuelve a intentar.',
+  ACCOUNT_CREATION_FAILED: 'El servicio de autenticación no pudo crear la cuenta. Si el problema se repite, pide al administrador que revise los registros de Supabase.',
+  PROFILE_CREATION_FAILED: 'No se pudo guardar el perfil electoral. Pide al administrador que revise el registro antes de volver a intentar.',
+  ASSIGNMENT_CREATION_FAILED: 'No se pudo guardar la asignación. Revisa la disponibilidad de la mesa o recinto y vuelve a intentar.',
+  JRV_OCUPADA: 'La JRV ya tiene un responsable. Recarga el formulario para confirmar un reemplazo.',
+  ASIGNACION_CAMBIO: 'Cambió el responsable de la JRV. Recarga el formulario y confirma la asignación vigente.',
+};
 
 interface ProfileRow {
   cedula?: string;
@@ -50,21 +77,22 @@ export class SupabaseAuthAdapter implements AuthRepository {
   private readonly local = new SqliteAuthDao();
 
   async signOut(): Promise<void> {
-    const { error } = await supabase.auth.signOut({ scope: 'local' });
-    if (error) throw new Error(error.message);
     await this.local.clearUser();
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    if (error && !isAuthNetworkFailure(error)) throw new Error(error.message);
   }
 
   async restoreSession(): Promise<User | null> {
-    const [cachedUser, network] = await Promise.all([
+    const [cachedUser, offline] = await Promise.all([
       this.local.loadUser(),
-      NetInfo.fetch(),
+      isOffline(),
     ]);
-    const offline = network.isConnected === false || network.isInternetReachable === false;
+    const activeCache = cachedUser?.status === 'ACTIVE' ? cachedUser : null;
+    if (offline) return activeCache;
     const { data, error } = await supabase.auth.getSession();
 
     if (!data.session) {
-      if (offline && cachedUser) return cachedUser;
+      if (error && isAuthNetworkFailure(error)) return activeCache;
       if (error) throw new Error(`No se pudo restaurar la sesión: ${error.message}`);
       await this.local.clearUser();
       return null;
@@ -78,7 +106,7 @@ export class SupabaseAuthAdapter implements AuthRepository {
       .maybeSingle();
 
     if (profileError) {
-      if (offline && cachedUser?.id === userId) return cachedUser;
+      if (isAuthNetworkFailure(profileError)) return activeCache?.id === userId ? activeCache : null;
       throw new Error(`No se pudo restaurar el perfil electoral: ${profileError.message}`);
     }
     if (!profile) {
@@ -102,7 +130,8 @@ export class SupabaseAuthAdapter implements AuthRepository {
    * A temporary password is set and the profile row is created with status 'PENDING'.
    */
   async createUser(
-    user: Omit<User, 'id' | 'status'>
+    user: Omit<User, 'id' | 'status'>,
+    asignacionEsperada?: string,
   ): Promise<{ user: User; temporaryPassword: string }> {
     const { data, error } = await supabase.functions.invoke('create-user', {
       body: {
@@ -113,17 +142,23 @@ export class SupabaseAuthAdapter implements AuthRepository {
         phone: user.phone,
         role: user.role,
         jurisdictionId: user.jurisdictionId,
+        asignacionEsperada,
       },
     });
     if (error instanceof FunctionsHttpError) {
       if (error.context.status === 404) {
         throw new Error('No se encontró la función create-user en el proyecto configurado. Despliégala en el mismo proyecto indicado por EXPO_PUBLIC_SUPABASE_URL.');
       }
-      const body: unknown = await error.context.clone().json();
+      const body: unknown = await error.context.clone().json().catch(() => null);
       const code = body && typeof body === 'object' && 'error' in body && typeof body.error === 'string'
         ? body.error
         : `HTTP_${error.context.status}`;
-      throw new Error(`No se pudo crear el usuario: ${code}.`);
+      throw new Error(
+        accountCreationMessages[code] ??
+          (error.context.status === 401
+            ? accountCreationMessages.AUTH_REQUIRED
+            : 'El servicio no pudo completar el registro. Intenta de nuevo y avisa al administrador si el problema continúa.'),
+      );
     }
     if (error) throw new Error(`No se pudo crear el usuario: ${error.message}`);
     if (!data?.user) throw new Error('La operación remota no devolvió el usuario creado.');
@@ -138,9 +173,11 @@ export class SupabaseAuthAdapter implements AuthRepository {
 
   /** Sign‑in with email and password, returning a populated User entity. */
   async signIn(email: string, password: string): Promise<User> {
+    if (await isOffline()) throw new Error(connectionRequired);
     const { data: signInData, error: signInError } =
       await supabase.auth.signInWithPassword({ email, password });
     if (signInError) {
+      if (isAuthNetworkFailure(signInError)) throw new Error(connectionRequired);
       throw new Error(`Sign‑in failed: ${signInError.message}`);
     }
     const userId = signInData?.user?.id;
@@ -154,6 +191,7 @@ export class SupabaseAuthAdapter implements AuthRepository {
       .maybeSingle();
     if (profileError) {
       await supabase.auth.signOut({ scope: 'local' });
+      if (isAuthNetworkFailure(profileError)) throw new Error(connectionRequired);
       if (profileError.code === '42501' || profileError.message.toLowerCase().includes('permission denied')) {
         throw new Error('Supabase bloqueó la lectura del perfil. Verifica que la migración de RLS esté aplicada y que la política permita leer solo el perfil propio.');
       }
@@ -230,7 +268,7 @@ export class SupabaseAuthAdapter implements AuthRepository {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw new Error(`No se pudo guardar la contraseña: ${error.message}`);
     } finally {
-      await supabase.auth.signOut({ scope: 'local' });
+      await this.signOut();
     }
   }
 

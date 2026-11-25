@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,214 +12,298 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import AppIcon from '@/shared/presentation/AppIcon';
+import Animated, {
+  Easing,
+  FadeInDown,
+  FadeInUp,
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { AppButton, Card, StatusBanner } from '@/shared/presentation/Ui';
-import { Colors } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
+import ContourLines from '@/shared/presentation/ContourLines';
+import ElectionMotion from '@/shared/presentation/ElectionMotion';
+import { StatusBanner, TricolorStripe } from '@/shared/presentation/Ui';
 import { loginUseCase } from './authUseCaseProvider';
 import { useSessionStore } from './sessionStore';
+import AuthField from './components/AuthField';
+import SubmitButton from './components/SubmitButton';
+import { EscenaVuelvePronto, TransicionSufragio } from './components/TalonElectoral';
+import type { User } from '../domain/entities';
 
-const schema = z.object({
+const esquemaCredenciales = z.object({
   email: z.string().trim().email('Revisa el formato del correo electrónico'),
   password: z.string().min(6, 'Ingresa una contraseña de al menos 6 caracteres'),
 });
 
-type FormValues = z.infer<typeof schema>;
-
-function VisibilityGlyph({ hidden }: { hidden: boolean }) {
-  return (
-    <View accessible={false} style={styles.eyeFrame}>
-      <View style={styles.eyeShape}>
-        <View style={styles.eyePupil} />
-      </View>
-      {hidden ? <View style={styles.eyeSlash} /> : null}
-    </View>
-  );
-}
+type ValoresCredenciales = z.infer<typeof esquemaCredenciales>;
 
 export default function LoginScreen() {
-  const [operation, setOperation] = useState<'idle' | 'loading' | 'error'>('idle');
-  const [message, setMessage] = useState('');
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const setUser = useSessionStore((state) => state.setUser);
-  const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  const [estadoProceso, setEstadoProceso] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [detalleError, setDetalleError] = useState('');
+  const [mostrarClave, setMostrarClave] = useState(false);
+  const [delegadoVerificado, setDelegadoVerificado] = useState<User>();
+
+  const campoClave = useRef<ComponentRef<typeof TextInput>>(null);
+
+  const guardarSesion = useSessionStore((state) => state.setUser);
+  const farewellName = useSessionStore((state) => state.farewellName);
+  const clearFarewell = useSessionStore((state) => state.clearFarewell);
+
+  const formulario = useForm<ValoresCredenciales>({
+    resolver: zodResolver(esquemaCredenciales),
     defaultValues: { email: '', password: '' },
     mode: 'onSubmit',
+    reValidateMode: 'onBlur',
   });
 
-  const submit = form.handleSubmit(async (values) => {
-    setOperation('loading');
-    setMessage('');
+  const sacudida = useSharedValue(0);
+  useEffect(() => {
+    if (estadoProceso !== 'error') return;
+    sacudida.set(
+      withSequence(
+        withTiming(-7, { duration: 42 }),
+        withRepeat(withTiming(7, { duration: 74 }), 3, true),
+        withTiming(0, { duration: 42 }),
+      ),
+    );
+  }, [estadoProceso, sacudida]);
+
+  const estiloSacudida = useAnimatedStyle(() => ({
+    transform: [{ translateX: sacudida.value }],
+  }));
+
+  const autenticarDelegado = formulario.handleSubmit(async (valores) => {
+    setEstadoProceso('loading');
+    setDetalleError('');
     try {
       if (!process.env.EXPO_PUBLIC_SUPABASE_URL || !process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY) {
-        throw new Error('Falta configurar la conexión con Supabase. No se enviaron tus credenciales.');
+        throw new Error('Falta configurar la conexión al servicio remoto.');
       }
-      const user = await loginUseCase(values.email.trim(), values.password);
-      setUser(user);
-      if (user.status === 'PENDING') router.replace('/first-access');
-      else if (user.role === 'provincial') router.replace('/provincial');
-      else if (user.role === 'coordinator') router.replace('/recinto');
-      else router.replace('/veedor');
-    } catch (error) {
-      setOperation('error');
-      setMessage(error instanceof Error ? error.message : 'No se pudo completar el inicio de sesión.');
+      const perfil = await loginUseCase(valores.email.trim(), valores.password);
+      if (perfil.status === 'ACTIVE') {
+        setEstadoProceso('idle');
+        setDelegadoVerificado(perfil);
+      } else if (perfil.status === 'PENDING') {
+        guardarSesion(perfil);
+        router.replace('/first-access');
+      } else {
+        setEstadoProceso('error');
+        setDetalleError('Esta cuenta se encuentra deshabilitada. Comunícate con tu coordinador.');
+      }
+    } catch (causa) {
+      setEstadoProceso('error');
+      setDetalleError(
+        causa instanceof Error ? causa.message : 'No se pudo completar el inicio de sesión.',
+      );
     }
   });
 
+  const procesando = estadoProceso === 'loading';
+
+  if (farewellName) {
+    return (
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
+        <ContourLines />
+        <EscenaVuelvePronto nombre={farewellName} alTerminar={clearFarewell} />
+      </SafeAreaView>
+    );
+  }
+
+  if (delegadoVerificado) {
+    return (
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
+        <ContourLines />
+        <TransicionSufragio
+          usuario={delegadoVerificado}
+          alFinalizar={() => {
+            guardarSesion(delegadoVerificado);
+            if (delegadoVerificado.role === 'provincial') router.replace('/provincial');
+            else if (delegadoVerificado.role === 'coordinator') router.replace('/recinto');
+            else router.replace('/veedor');
+          }}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <Image
+          accessible={false}
+          source={require('../../../../assets/images/login-paper.png')}
+          resizeMode="cover"
+          style={styles.loginBackground}
+        />
+      </View>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
-          className="flex-1 bg-brand-paper"
           style={styles.flex}
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled">
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="always"
+          showsVerticalScrollIndicator={false}>
           <View style={styles.shell}>
-            <View className="overflow-hidden rounded-3xl bg-brand-navy px-6 py-6">
-              <View style={styles.brandRow}>
-                <View className="h-12 w-12 items-center justify-center rounded-2xl bg-brand-gold">
-                  <Text className="text-sm font-black text-brand-navy">CE</Text>
-                </View>
-                <View>
-                  <Text className="text-xs font-extrabold tracking-widest text-white">CONTROL ELECTORAL</Text>
-                  <Text className="mt-1 text-xs text-white/75">Organización política · EPN</Text>
-                </View>
+            <Animated.View
+              entering={FadeInDown.duration(420).easing(Easing.out(Easing.cubic)).reduceMotion(ReduceMotion.System)}
+              style={styles.heroBlock}>
+              <View style={styles.brand}>
+                <View style={styles.brandStripe}><TricolorStripe width={40} height={3} /></View>
+                <Text accessibilityRole="header" style={styles.appTitle}>
+                  Control Electoral
+                </Text>
+                <Text className="font-electoral text-sm text-brand-muted">Organización Política</Text>
               </View>
-              <Text className="mt-6 text-3xl font-extrabold leading-9 text-white">
-                Tu jornada,{'\n'}clara y segura.
-              </Text>
-              <Text className="mt-2 text-sm leading-5 text-white/80">
-                Ingresa con las credenciales que te entregó tu coordinador.
-              </Text>
-              <View className="absolute -bottom-8 -right-7 h-24 w-24 rounded-full border-[10px] border-white/10" />
-            </View>
-
-            <Animated.View entering={FadeInDown.duration(350)}>
-              <Card>
-                <View style={styles.formHeading}>
-                  <Text className="text-xl font-extrabold text-brand-ink">Iniciar sesión</Text>
-                  <Text className="mt-1 text-sm leading-5 text-brand-muted">
-                    Tu cuenta y tus permisos dependen del rol asignado.
-                  </Text>
+              <View
+                pointerEvents="none"
+                accessible={false}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                style={styles.animationStage}>
+                <View style={styles.ballotHalo} />
+                <View style={styles.actaIllustration}>
+                  <View style={styles.actaHeaderLine} />
+                  {[0, 1, 2, 3].map((row) => (
+                    <View key={row} style={styles.actaRow}>
+                      <View style={styles.actaOption} />
+                      <View style={styles.actaCount} />
+                    </View>
+                  ))}
+                  <View style={styles.actaSignature} />
                 </View>
+                <ElectionMotion
+                  key={procesando ? 'voting' : 'login-welcome'}
+                  scene={procesando ? 'voting' : 'login-welcome'}
+                  width={216}
+                  height={176}
+                  loop
+                />
+              </View>
+            </Animated.View>
 
-                {operation === 'error' ? (
-                  <View style={{ marginBottom: 16 }}>
-                    <StatusBanner tone="error" title="No se pudo iniciar sesión" detail={message} />
-                  </View>
+            <Animated.View
+              entering={FadeInUp.delay(100).duration(420).easing(Easing.out(Easing.cubic)).reduceMotion(ReduceMotion.System)}
+              style={styles.formSection}>
+              <View style={styles.formHeading}>
+                <View style={styles.formAccent} />
+                <Text accessibilityRole="header" style={styles.formTitle}>Iniciar sesión</Text>
+              </View>
+              <Animated.View style={[styles.fields, estiloSacudida]}>
+                {estadoProceso === 'error' ? (
+                  <StatusBanner
+                    tone="error"
+                    title="No se pudo iniciar sesión"
+                    detail={detalleError}
+                  />
                 ) : null}
 
-                <Text className="mb-2 mt-1 text-sm font-bold text-brand-ink">Correo electrónico</Text>
                 <Controller
-                  control={form.control}
+                  control={formulario.control}
                   name="email"
                   render={({ field }) => (
-                    <TextInput
-                      accessibilityLabel="Correo electrónico"
+                    <AuthField
+                      variant="filled"
+                      label="Correo electrónico"
+                      icon={{ ios: 'envelope', android: 'mail', web: 'mail' }}
+                      error={formulario.formState.errors.email?.message}
                       autoCapitalize="none"
                       autoComplete="email"
                       autoCorrect={false}
                       keyboardType="email-address"
                       onBlur={field.onBlur}
                       onChangeText={field.onChange}
-                      placeholder="nombre@organizacion.ec"
-                      placeholderTextColor={colors.textSecondary}
+                      placeholder="correo@organizacion.ec"
+                      onSubmitEditing={() => campoClave.current?.focus()}
+                      submitBehavior="submit"
                       returnKeyType="next"
                       textContentType="emailAddress"
                       value={field.value}
-                      style={styles.input}
+                      editable={!procesando}
                     />
                   )}
                 />
-                {form.formState.errors.email ? (
-                  <Text accessibilityRole="alert" className="mt-1 text-xs font-semibold text-brand-danger">
-                    {form.formState.errors.email.message}
-                  </Text>
-                ) : null}
 
-                <View style={styles.passwordLabelRow}>
-                  <Text className="text-sm font-bold text-brand-ink">Contraseña</Text>
-                  <Pressable
-                    accessibilityRole="link"
-                    hitSlop={8}
-                    onPress={() => router.push('/recover')}>
-                    <Text className="text-xs font-bold text-brand-navy">¿La olvidaste?</Text>
-                  </Pressable>
-                </View>
-                <View style={styles.passwordBox}>
-                  <Controller
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <TextInput
-                        accessibilityLabel="Contraseña"
-                        autoCapitalize="none"
-                        autoComplete="password"
-                        onBlur={field.onBlur}
-                        onChangeText={field.onChange}
-                        onSubmitEditing={() => {
-                          void submit();
-                        }}
-                        placeholder="Ingresa tu contraseña"
-                        placeholderTextColor={colors.textSecondary}
-                        returnKeyType="go"
-                        secureTextEntry={!passwordVisible}
-                        textContentType="password"
-                        value={field.value}
-                        style={styles.passwordInput}
-                      />
-                    )}
-                  />
-                  <Pressable
-                    accessibilityLabel={passwordVisible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: passwordVisible }}
-                    hitSlop={10}
-                    onPress={() => setPasswordVisible((visible) => !visible)}
-                    style={styles.visibilityButton}>
-                    <VisibilityGlyph hidden={!passwordVisible} />
-                    <Text className="ml-1 text-xs font-bold text-brand-navy">
-                      {passwordVisible ? 'Ocultar' : 'Ver'}
-                    </Text>
-                  </Pressable>
-                </View>
-                {form.formState.errors.password ? (
-                  <Text accessibilityRole="alert" className="mt-1 text-xs font-semibold text-brand-danger">
-                    {form.formState.errors.password.message}
-                  </Text>
-                ) : null}
-
-                <View style={{ marginTop: 22 }}>
-                  <AppButton
-                    label="Ingresar"
-                    loading={operation === 'loading'}
-                    onPress={submit}
-                    disabled={operation === 'loading'}
-                  />
-                </View>
-                {operation === 'loading' ? (
-                  <View style={{ marginTop: 12 }}>
-                    <StatusBanner
-                      tone="info"
-                      busy
-                      title="Validando acceso"
-                      detail="Conectando con el servicio de autenticación."
+                <Controller
+                  control={formulario.control}
+                  name="password"
+                  render={({ field }) => (
+                    <AuthField
+                      variant="filled"
+                      label="Contraseña"
+                      icon={{ ios: 'lock', android: 'lock', web: 'lock' }}
+                      error={formulario.formState.errors.password?.message}
+                      autoCapitalize="none"
+                      autoComplete="password"
+                      autoCorrect={false}
+                      onBlur={field.onBlur}
+                      onChangeText={field.onChange}
+                      onSubmitEditing={() => {
+                        if (!procesando) void autenticarDelegado();
+                      }}
+                      placeholder="Ingresa tu contraseña"
+                      ref={campoClave}
+                      returnKeyType="go"
+                      secureTextEntry={!mostrarClave}
+                      textContentType="password"
+                      value={field.value}
+                      editable={!procesando}
+                      trailing={
+                        <Pressable
+                          accessibilityLabel={
+                            mostrarClave ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                          }
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: mostrarClave }}
+                          hitSlop={10}
+                          onPress={() => setMostrarClave((actual) => !actual)}
+                          style={styles.eyeButton}>
+                          <AppIcon
+                            name={
+                              mostrarClave
+                                ? { ios: 'eye.slash', android: 'visibility_off', web: 'visibility_off' }
+                                : { ios: 'eye', android: 'visibility', web: 'visibility' }
+                            }
+                            size={20}
+                            tintColor={Colors.light.textSecondary}
+                          />
+                        </Pressable>
+                      }
                     />
-                  </View>
-                ) : null}
-              </Card>
-            </Animated.View>
+                  )}
+                />
+              </Animated.View>
 
-            <View style={styles.footer}>
-              <View className="h-2 w-2 rounded-full bg-brand-gold" />
-              <Text className="text-center text-xs leading-5 text-brand-muted">
-                Acceso privado para personal habilitado.{'\n'}Si no puedes ingresar, contacta a tu coordinador.
-              </Text>
-            </View>
+              <View style={styles.submitWrap}>
+                <SubmitButton
+                  label="Ingresar"
+                  loadingLabel="Verificando acceso…"
+                  loading={procesando}
+                  showArrow
+                  onPress={autenticarDelegado}
+                />
+              </View>
+
+              <View style={styles.recoveryFooter}>
+                <View pointerEvents="none" style={styles.perforation} />
+                <Pressable
+                  accessibilityRole="link"
+                  hitSlop={6}
+                  onPress={() => router.push('/recover')}
+                  style={({ pressed }) => [styles.recoverLink, pressed && { opacity: 0.65 }]}>
+                  <Text className="text-center font-electoral-bold text-sm text-brand-navy">¿Olvidaste tu contraseña?</Text>
+                </Pressable>
+              </View>
+            </Animated.View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -226,50 +311,164 @@ export default function LoginScreen() {
   );
 }
 
-const colors = Colors.light;
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
+  screen: { flex: 1, backgroundColor: Colors.light.background },
+  loginBackground: {
+    width: '100%',
+    height: '100%',
+    opacity: 0.80,
+  },
   flex: { flex: 1 },
-  content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 24 },
-  shell: { width: '100%', maxWidth: 480, alignSelf: 'center', gap: 16 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  formHeading: { marginBottom: 20 },
-  input: {
-    height: 54,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 15,
-    color: colors.text,
-    fontSize: 16,
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
   },
-  passwordLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 18, marginBottom: 8 },
-  passwordBox: {
-    minHeight: 54,
-    flexDirection: 'row',
+  shell: {
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  heroBlock: {
+    paddingBottom: 16,
+    gap: 7,
+  },
+  brand: {
+    gap: 4,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    paddingLeft: 15,
-    paddingRight: 10,
   },
-  passwordInput: { flex: 1, height: 52, color: colors.text, fontSize: 16 },
-  visibilityButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
-  eyeFrame: { width: 23, height: 20, alignItems: 'center', justifyContent: 'center' },
-  eyeShape: {
-    width: 18,
-    height: 13,
-    borderWidth: 1.6,
-    borderColor: colors.primary,
-    borderRadius: 10,
+  brandStripe: {
+    marginBottom: 3,
+  },
+  animationStage: {
+    width: '100%',
+    minHeight: 188,
     alignItems: 'center',
     justifyContent: 'center',
-    transform: [{ rotate: '45deg' }],
   },
-  eyePupil: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.primary },
-  eyeSlash: { position: 'absolute', width: 25, height: 1.5, backgroundColor: colors.primary, transform: [{ rotate: '-45deg' }] },
-  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 2 },
+  ballotHalo: {
+    position: 'absolute',
+    width: 218,
+    height: 144,
+    borderRadius: 80,
+    backgroundColor: 'rgba(255, 253, 244, 0.62)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#D9C8AA',
+    transform: [{ rotate: '-12deg' }],
+  },
+  actaIllustration: {
+    position: 'absolute',
+    width: 111,
+    height: 135,
+    padding: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#C7D7DC',
+    backgroundColor: '#FDFCF7',
+    transform: [{ translateX: -56 }, { translateY: -16 }, { rotate: '-14deg' }],
+  },
+  actaHeaderLine: {
+    height: 4,
+    width: '62%',
+    borderRadius: 2,
+    backgroundColor: Colors.light.accent,
+    marginBottom: 8,
+  },
+  actaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 17,
+    borderTopWidth: 1,
+    borderTopColor: '#D9E4E7',
+  },
+  actaOption: {
+    width: 7,
+    height: 7,
+    borderRadius: 1,
+    borderWidth: 1,
+    borderColor: '#8DB1BE',
+  },
+  actaCount: {
+    marginLeft: 6,
+    width: 24,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: '#C4D6DC',
+  },
+  actaSignature: {
+    width: '50%',
+    marginTop: 13,
+    borderTopWidth: 1,
+    borderTopColor: '#B2C8D0',
+  },
+  appTitle: {
+    fontFamily: Fonts.serif,
+    fontWeight: '700',
+    fontSize: 33,
+    color: Colors.light.primaryPressed,
+    textAlign: 'center',
+  },
+  formSection: {
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 0,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    backgroundColor: Colors.light.backgroundElement,
+    shadowColor: Colors.light.primaryPressed,
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.12,
+    shadowRadius: 17,
+    elevation: 3,
+    gap: 13,
+  },
+  formHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 3,
+  },
+  formAccent: {
+    width: 4,
+    height: 23,
+    borderRadius: 2,
+    backgroundColor: Colors.light.accent,
+  },
+  formTitle: {
+    fontFamily: Fonts.serif,
+    fontWeight: '700',
+    fontSize: 23,
+    color: Colors.light.text,
+  },
+  fields: {
+    gap: 12,
+  },
+  eyeButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  submitWrap: {
+    marginTop: 2,
+  },
+  recoveryFooter: {
+    justifyContent: 'center',
+    paddingVertical: 3,
+  },
+  perforation: {
+    height: 1,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 1,
+    borderStyle: 'dashed',
+    borderColor: Colors.light.border,
+  },
+  recoverLink: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignSelf: 'center',
+  },
 });

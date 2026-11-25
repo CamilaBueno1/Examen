@@ -36,8 +36,8 @@ export interface CorreccionActa {
 }
 
 export interface PropuestasRepository {
-  guardarPropuesta(autor: string, acta: string, version: number, propuesta: CorreccionActa): Promise<void>;
-  consultarPropuesta(autor: string, acta: string): Promise<{ version: number; propuesta: CorreccionActa } | null>;
+  guardarPropuesta(autor: string, acta: string, version: number, propuesta: CorreccionActa, pendiente?: boolean): Promise<void>;
+  consultarPropuesta(autor: string, acta: string): Promise<{ version: number; propuesta: CorreccionActa; pendiente: boolean } | null>;
   borrarPropuesta(autor: string, acta: string): Promise<void>;
 }
 
@@ -45,8 +45,13 @@ export interface RevisionActasRepository {
   listar(): Promise<ActaRemota[]>;
   historial(id: string): Promise<RevisionAnterior[]>;
   foto(ruta: string): Promise<string>;
-  aprobar(fotoId: string): Promise<void>;
+  validarEvidencia(fotoId: string): Promise<void>;
   corregir(id: string, version: number, correccion: CorreccionActa): Promise<number>;
+}
+
+export function puedeValidarEvidencia(acta: ActaRemota): boolean {
+  return !!acta.foto_id && !!acta.storage_path &&
+    (acta.evidencia === 'EVIDENCIA_RECIBIDA' || acta.evidencia === 'EN_REVISION');
 }
 
 export function revisarActas(repository: RevisionActasRepository) {
@@ -54,14 +59,23 @@ export function revisarActas(repository: RevisionActasRepository) {
     listar: () => repository.listar(),
     historial: (id: string) => repository.historial(id),
     foto: (ruta: string) => repository.foto(ruta),
-    aprobar: (id: string) => repository.aprobar(id),
-    corregir: (acta: ActaRemota, correccion: CorreccionActa) => {
+    validarEvidencia: (acta: ActaRemota) => {
+      if (!acta.foto_id || !puedeValidarEvidencia(acta)) {
+        throw new Error('El acta no tiene una fotografía pendiente de validación.');
+      }
+      return repository.validarEvidencia(acta.foto_id);
+    },
+    corregir: (acta: Pick<ActaRemota, 'id' | 'version'>, correccion: CorreccionActa) => {
       const { motivo, votos, blancos, nulos, sufragantes } = correccion;
       const conteos = [...votos.map((voto) => voto.votos), blancos, nulos, sufragantes];
-      if (votos.length !== 5 || new Set(votos.map((voto) => voto.id)).size !== 5 ||
-          conteos.some((value) => !Number.isSafeInteger(value) || value < 0) ||
-          conteos.slice(0, -1).reduce((total, count) => total + count, 0) !== sufragantes ||
-          !motivo.trim() || motivo.trim().length > 250) {
+      if (
+        votos.length !== 5 ||
+        new Set(votos.map((voto) => voto.id)).size !== 5 ||
+        conteos.some((value) => !Number.isSafeInteger(value) || value < 0) ||
+        conteos.slice(0, -1).reduce((total, count) => total + count, 0) !== sufragantes ||
+        !motivo.trim() ||
+        motivo.trim().length > 250
+      ) {
         throw new Error('Revisa los conteos, el total y el motivo de la corrección.');
       }
       return repository.corregir(acta.id, acta.version, { ...correccion, motivo: motivo.trim() });

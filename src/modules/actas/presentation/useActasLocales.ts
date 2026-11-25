@@ -16,7 +16,7 @@ export function useActasLocales() {
     void listarActasLocales(user.id).then(
       (actas) => { if (focused) setResult({ owner: user.id, revision, actas }); },
       (error: unknown) => {
-        if (focused) setResult({ owner: user.id, revision, error: error instanceof Error ? error.message : 'No se pudo leer SQLite.' });
+        if (focused) setResult({ owner: user.id, revision, error: error instanceof Error ? error.message : 'No se pudieron leer los registros locales.' });
       },
     );
     return () => { focused = false; };

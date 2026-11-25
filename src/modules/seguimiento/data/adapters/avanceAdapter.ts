@@ -17,9 +17,16 @@ export const avanceAdapter: AvanceRepository = {
     return data as ResultadoCandidatura[];
   },
   observarCambios(callback) {
-    const channel = supabase.channel(`avance-electoral-${++sequence}`)
+    const channel = supabase
+      .channel(`avance-electoral-${++sequence}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cambio_electoral' }, callback)
-      .subscribe((status) => { if (status === 'SUBSCRIBED') callback(); });
-    return () => { void supabase.removeChannel(channel); };
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'acta' }, callback)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'foto_acta' }, callback)
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') callback();
+      });
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   },
 };

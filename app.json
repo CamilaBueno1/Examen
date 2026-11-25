@@ -1,27 +1,29 @@
 {
   "expo": {
-    "name": "examen",
+    "name": "Control Electoral",
     "slug": "examen",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/control-electoral-icon.png",
     "scheme": "examen",
     "userInterfaceStyle": "automatic",
-    "ios": {
-      "icon": "./assets/expo.icon"
-    },
     "android": {
+      "package": "ec.controlelectoral.examen",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#103B50",
+        "foregroundImage": "./assets/images/control-electoral-foreground.png",
+        "monochromeImage": "./assets/images/control-electoral-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
-      "output": "server",
-      "favicon": "./assets/images/favicon.png"
+      "output": "single",
+      "favicon": "./assets/images/control-electoral-icon.png"
     },
     "plugins": [
       "expo-router",
@@ -43,9 +45,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#FAFAF7",
+          "image": "./assets/images/control-electoral-splash.png",
+          "imageWidth": 180
         }
       ],
       "@sentry/react-native"
@@ -53,6 +55,17 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "9f70011d-6d3f-4e00-991f-ffb926df7b14"
+      }
+    },
+    "owner": "camilabuenor"
   }
 }

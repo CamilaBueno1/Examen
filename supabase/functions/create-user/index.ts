@@ -24,6 +24,15 @@ function isValidCedula(value: unknown): value is string {
   return (10 - (sum % 10)) % 10 === Number(value[9]);
 }
 
+function isValidEcuadorPhone(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  const clean = value.trim().replace(/[\s-]/g, '');
+  const local = /^\+5930?\d{8,9}$/.test(clean)
+    ? (clean.slice(4).startsWith('0') ? clean.slice(4) : `0${clean.slice(4)}`)
+    : clean;
+  return /^09\d{8}$/.test(local) || /^0[2-7]\d{7}$/.test(local);
+}
+
 function text(value: unknown, min: number, max: number): value is string {
   return typeof value === 'string' && value.trim().length >= min && value.trim().length <= max;
 }
@@ -32,7 +41,8 @@ function createTemporaryPassword() {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
   const randomBytes = new Uint8Array(24);
   crypto.getRandomValues(randomBytes);
-  return Array.from(randomBytes, (byte) => alphabet[byte & 63]).join('');
+  const randomSuffix = Array.from(randomBytes, (byte) => alphabet[byte & 63]).join('');
+  return `Aa7!${randomSuffix}`;
 }
 
 Deno.serve(async (request) => {
@@ -83,12 +93,17 @@ Deno.serve(async (request) => {
   const firstName = input.firstName;
   const lastName = input.lastName;
   const phone = input.phone;
+  const asignacionEsperada = input.asignacionEsperada;
   if (!isValidCedula(input.cedula)
       || !text(firstName, 2, 100)
       || !text(lastName, 2, 100)
-      || !text(phone, 7, 20)
+      || !isValidEcuadorPhone(phone)
       || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
       || !jurisdictionId
+      || (asignacionEsperada !== undefined && (
+        role !== 'veedor' || typeof asignacionEsperada !== 'string'
+        || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(asignacionEsperada)
+      ))
       || (role !== 'coordinator' && role !== 'veedor')) {
     return response(400, { error: 'INVALID_INPUT' });
   }
@@ -169,7 +184,20 @@ Deno.serve(async (request) => {
     password: temporaryPassword,
     email_confirm: true,
   });
-  if (createError || !created.user) return response(409, { error: 'ACCOUNT_CREATION_FAILED' });
+  if (createError || !created.user) {
+    const code = createError?.code;
+    if (code === 'email_exists' || code === 'user_already_exists') {
+      return response(409, { error: 'EMAIL_ALREADY_REGISTERED' });
+    }
+    if (code === 'email_address_invalid' || code === 'validation_failed') {
+      return response(400, { error: 'INVALID_ACCOUNT_EMAIL' });
+    }
+    if (code === 'over_request_rate_limit') {
+      return response(429, { error: 'ACCOUNT_CREATION_RATE_LIMITED' });
+    }
+    console.error('create-user auth creation failed', { code, status: createError?.status });
+    return response(500, { error: 'ACCOUNT_CREATION_FAILED' });
+  }
 
   const { data: profile, error: profileError } = await admin
     .from('profile')
@@ -199,15 +227,19 @@ Deno.serve(async (request) => {
       p_actor_id: actor.id,
       p_motivo: 'Alta jerárquica o reemplazo',
     })
-    : await admin.rpc('crear_veedor_asignacion', {
+    : await admin.rpc(asignacionEsperada ? 'crear_veedor_asignacion_confirmada' : 'crear_veedor_asignacion', {
       p_veedor_id: profile.id,
       p_jrv_id: jrvId,
       p_actor_id: actor.id,
       p_motivo: 'Alta jerárquica o reemplazo',
+      ...(asignacionEsperada ? { p_asignacion_esperada: asignacionEsperada } : {}),
     });
 
   if (assignment.error) {
     await rollbackUser(created.user.id, profile.id);
+    if (['JRV_OCUPADA', 'ASIGNACION_CAMBIO'].includes(assignment.error.message)) {
+      return response(409, { error: assignment.error.message });
+    }
     return response(409, { error: 'ASSIGNMENT_CREATION_FAILED' });
   }
 

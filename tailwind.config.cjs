@@ -10,20 +10,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Mapping of custom brand colors used throughout the UI components
-        "brand-paper": "#F6F8FC",
-        "brand-navy": "#163D77",
-        "brand-gold": "#E9B949",
-        "brand-ink": "#172033",
-        "brand-muted": "#667085",
-        "brand-line": "#D7DEEA",
-        "brand-surface": "#FFFFFF",
+        "brand-paper": "#F6F5F0",
+        "brand-navy": "#15464B",
+        "brand-gold": "#BF9A59",
+        "brand-ink": "#192B2E",
+        "brand-muted": "#546564",
+        "brand-line": "#DCE3DE",
+        "brand-surface": "#FFFEFA",
         "brand-danger": "#B42318",
         "brand-warning": "#B54708",
         "brand-success": "#067647",
-        // Add any additional brand colors referenced in the code
-        "brand-primary": "#163D77",
-        "brand-primary-pressed": "#0E2D5B",
+        "brand-primary": "#15464B",
+        "brand-primary-pressed": "#10363A",
       },
     },
   },

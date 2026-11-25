@@ -1,40 +1,43 @@
 import { router } from 'expo-router';
-import { Pressable, Text } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { MesasAutorizadas } from '@/modules/territorio/presentation/MesasAutorizadas';
-import SignOutButton from '@/modules/authentication/presentation/SignOutButton';
 import AvanceElectoral from './AvanceElectoral';
-import { AppButton, AppPage, ScreenHeader } from '@/shared/presentation/Ui';
+import { ActionRow, AppPage, ScreenHeader } from '@/shared/presentation/Ui';
 
 export default function RecintoDashboard() {
-
   return (
     <AppPage>
       <ScreenHeader
         eyebrow="COORDINACIÓN DE RECINTO"
-        title="Tu recinto"
-        subtitle="Veedores, JRV y actas dentro de tu ámbito autorizado"
+        title="Gestión de tu recinto"
+        subtitle="Supervisa el avance de tus mesas, habilita veedores, reemplaza ausentes y corrige actas"
       />
-      <MesasAutorizadas />
       <AvanceElectoral />
-      <AppButton label="Revisar actas y evidencias" variant="secondary" onPress={() => router.push('/recinto/actas')} />
-      <Pressable
-        accessibilityRole="button"
-        className="rounded-2xl border border-brand-line bg-brand-surface p-4 active:bg-brand-paper"
-        onPress={() => router.push('/recinto/veedor')}>
-        <Text className="text-base font-bold text-brand-ink">Habilitar veedor</Text>
-        <Text className="mt-1 text-sm leading-5 text-brand-muted">Crear una cuenta y asignarla a una JRV de tu recinto.</Text>
-        <Text className="mt-3 text-sm font-bold text-brand-navy">Crear veedor  ›</Text>
-      </Pressable>
-      <Pressable
-        accessibilityRole="button"
-        className="rounded-2xl border border-brand-line bg-brand-surface p-4 active:bg-brand-paper"
-        onPress={() => router.push('/recinto/asignaciones')}>
-        <Text className="text-base font-bold text-brand-ink">Veedores y asignaciones</Text>
-        <Text className="mt-1 text-sm leading-5 text-brand-muted">Consultar la información sincronizada para este recinto.</Text>
-        <Text className="mt-3 text-sm font-bold text-brand-navy">Ver asignaciones  ›</Text>
-      </Pressable>
-      <SignOutButton />
+      <View className="gap-2.5">
+        <Text accessibilityRole="header" className="font-electoral-bold text-base text-brand-ink">
+          Acciones del coordinador de recinto
+        </Text>
+        <ActionRow
+          title="Habilitar nuevo veedor"
+          subtitle="Crear acceso para delegado con cédula verificada y mesa asignada"
+          onPress={() => router.push('/recinto/veedor')}
+        />
+        <ActionRow
+          title="Asignar o reemplazar veedor en mesa"
+          subtitle="Cubrir ausencias al instante conservando el registro histórico"
+          onPress={() => router.push('/recinto/asignaciones')}
+        />
+        <ActionRow
+          title="Consultar y corregir actas del recinto"
+          subtitle="Revisar evidencia fotográfica, ubicación GPS o corregir conteos con motivo"
+          onPress={() => router.push('/recinto/actas')}
+        />
+      </View>
+      <Text accessibilityRole="header" className="font-electoral-bold mt-1 text-base text-brand-ink">
+        Juntas Receptoras del Voto (JRV) de tu recinto
+      </Text>
+      <MesasAutorizadas />
     </AppPage>
   );
 }

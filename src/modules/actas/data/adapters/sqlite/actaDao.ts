@@ -57,11 +57,11 @@ function getActasDatabase() {
 }
 
 export class SqliteActaDao implements ActaRepository, RegistroActaRepository, ActasLocalesRepository, PropuestasRepository {
-  async guardarPropuesta(autor: string, acta: string, version: number, propuesta: CorreccionActa) {
+  async guardarPropuesta(autor: string, acta: string, version: number, propuesta: CorreccionActa, pendiente = false) {
     const db = await getActasDatabase();
     await db.runAsync(
       'INSERT OR REPLACE INTO propuestas_correccion (autor_id, acta_id, version, propuesta) VALUES (?, ?, ?, ?)',
-      [autor, acta, version, JSON.stringify(propuesta)],
+      [autor, acta, version, JSON.stringify({ pendiente, propuesta })],
     );
   }
 
@@ -70,7 +70,29 @@ export class SqliteActaDao implements ActaRepository, RegistroActaRepository, Ac
     const row = await db.getFirstAsync<{ version: number; propuesta: string }>(
       'SELECT version, propuesta FROM propuestas_correccion WHERE autor_id = ? AND acta_id = ?', [autor, acta],
     );
-    return row ? { version: row.version, propuesta: JSON.parse(row.propuesta) as CorreccionActa } : null;
+    if (!row) return null;
+    const datos = JSON.parse(row.propuesta) as CorreccionActa | { propuesta: CorreccionActa; pendiente: boolean | number };
+    return 'propuesta' in datos
+      ? { version: row.version, propuesta: datos.propuesta, pendiente: Boolean(datos.pendiente) }
+      : { version: row.version, propuesta: datos, pendiente: false };
+  }
+
+  async correccionesPendientes(autor: string) {
+    const db = await getActasDatabase();
+    return db.getAllAsync<{ acta_id: string; version: number; propuesta: string }>(
+      "SELECT acta_id, version, propuesta FROM propuestas_correccion WHERE autor_id = ? AND json_extract(propuesta, '$.pendiente') = 1",
+      [autor],
+    );
+  }
+
+  async resolverCorreccion(autor: string, fila: { acta_id: string; version: number; propuesta: string }, aceptada: boolean) {
+    const db = await getActasDatabase();
+    const filtro = [autor, fila.acta_id, fila.version, fila.propuesta];
+    if (aceptada) {
+      await db.runAsync('DELETE FROM propuestas_correccion WHERE autor_id = ? AND acta_id = ? AND version = ? AND propuesta = ?', filtro);
+    } else {
+      await db.runAsync("UPDATE propuestas_correccion SET propuesta = json_set(propuesta, '$.pendiente', 0) WHERE autor_id = ? AND acta_id = ? AND version = ? AND propuesta = ?", filtro);
+    }
   }
 
   async borrarPropuesta(autor: string, acta: string) {

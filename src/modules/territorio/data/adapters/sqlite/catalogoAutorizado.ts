@@ -28,21 +28,33 @@ function database() {
   return connection;
 }
 
+type RecursoCatalogo = 'mesas' | 'organizaciones';
+type EntradaCatalogo<T> = { version: number | null; datos: T };
+
 export const catalogoAutorizado = {
-  async leer<T>(autorId: string, recurso: 'mesas' | 'organizaciones'): Promise<T> {
+  async leerEntrada<T>(autorId: string, recurso: RecursoCatalogo): Promise<EntradaCatalogo<T> | null> {
     const db = await database();
     const row = await db.getFirstAsync<{ datos: string }>(
       'SELECT datos FROM catalogo_autorizado WHERE autor_id = ? AND recurso = ?',
       [autorId, recurso],
     );
-    if (!row) throw new Error('Conéctate para cargar el catálogo autorizado de esta cuenta.');
-    return JSON.parse(row.datos) as T;
+    if (!row) return null;
+    const value = JSON.parse(row.datos) as T | EntradaCatalogo<T>;
+    if (value && typeof value === 'object' && 'version' in value && 'datos' in value) {
+      return value as EntradaCatalogo<T>;
+    }
+    return { version: null, datos: value as T };
   },
-  async guardar(autorId: string, recurso: 'mesas' | 'organizaciones', datos: unknown) {
+  async leer<T>(autorId: string, recurso: RecursoCatalogo): Promise<T> {
+    const entrada = await catalogoAutorizado.leerEntrada<T>(autorId, recurso);
+    if (!entrada) throw new Error('Conéctate para cargar el catálogo autorizado de esta cuenta.');
+    return entrada.datos;
+  },
+  async guardar(autorId: string, recurso: RecursoCatalogo, datos: unknown, version: number | null = null) {
     const db = await database();
     await db.runAsync(
       'INSERT OR REPLACE INTO catalogo_autorizado (autor_id, recurso, datos) VALUES (?, ?, ?)',
-      [autorId, recurso, JSON.stringify(datos)],
+      [autorId, recurso, JSON.stringify({ version, datos })],
     );
   },
 };

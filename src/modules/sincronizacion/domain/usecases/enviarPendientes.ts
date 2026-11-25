@@ -19,7 +19,12 @@ export interface RecepcionActas {
 export function enviarPendientes(cola: ColaActas, remoto: RecepcionActas) {
   const notBefore = new Map<string, number>();
 
-  return async (autorId: string, vigente: () => boolean, alActualizar: () => void) => {
+  return async (
+    autorId: string,
+    vigente: () => boolean,
+    alActualizar: () => void,
+    alFallar?: (error: unknown, codigo: string) => void,
+  ) => {
     for (const operation of await cola.pendientes(autorId)) {
       if (!vigente()) return;
       if ((notBefore.get(operation.id) ?? 0) > Date.now()) continue;
@@ -40,10 +45,22 @@ export function enviarPendientes(cola: ColaActas, remoto: RecepcionActas) {
       } catch (cause) {
         if (!vigente()) return;
         const message = cause instanceof Error ? cause.message : '';
-        const terminal = ['CONFLICTO_VERSION', 'PERMISO_REVOCADO', 'OPERACION_INCOMPATIBLE',
-          'VOTOS_INVALIDOS', 'EVIDENCIA_INVALIDA', 'FOTO_NO_DISPONIBLE'].find((code) => message.includes(code));
+        const terminal = [
+          'CONFLICTO_VERSION',
+          'PERMISO_REVOCADO',
+          'OPERACION_INCOMPATIBLE',
+          'VOTOS_INVALIDOS',
+          'EVIDENCIA_INVALIDA',
+          'FOTO_NO_DISPONIBLE',
+        ].find((code) => message.includes(code));
         await cola.cambiarEstado(operation, terminal ?? estado, true);
-        if (!terminal) notBefore.set(operation.id, Date.now() + Math.min(300_000, 10_000 * 2 ** Math.min(operation.intentos, 5)));
+        if (!terminal) {
+          notBefore.set(operation.id, Date.now() + Math.min(300_000, 10_000 * 2 ** Math.min(operation.intentos, 5)));
+        }
+        alFallar?.(
+          cause,
+          estado === 'EVIDENCIA_PENDIENTE' ? 'ACTA_PHOTO_UPLOAD_FAILED' : terminal ?? 'ACTA_SYNC_RETRY_FAILED',
+        );
         alActualizar();
       }
     }

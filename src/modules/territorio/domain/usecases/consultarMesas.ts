@@ -18,6 +18,8 @@ export function consultarMesas(repository: MesasRepository) {
 export interface OrganizacionElectoral {
   id: string;
   nombre: string;
+  // Las copias de SQLite guardadas antes de incluir candidaturas aún sirven para capturar votos.
+  candidaturas?: { dignidad: 'alcaldia' | 'prefectura'; nombre: string }[];
 }
 
 export interface OrganizacionesRepository {
@@ -27,7 +29,15 @@ export interface OrganizacionesRepository {
 export function consultarOrganizaciones(repository: OrganizacionesRepository) {
   return async () => {
     const organizaciones = await repository.listarOrganizaciones();
-    if (organizaciones.length !== 5) throw new Error('El catálogo debe contener exactamente cinco organizaciones.');
+    if (organizaciones.length !== 5) {
+      throw new Error(`La consulta devolvió ${organizaciones.length} organizaciones. El catálogo autorizado debe contener exactamente cinco.`);
+    }
+    if (organizaciones.some(({ candidaturas }) =>
+      candidaturas?.length !== 2 ||
+      !candidaturas.some(({ dignidad, nombre }) => dignidad === 'alcaldia' && nombre.trim()) ||
+      !candidaturas.some(({ dignidad, nombre }) => dignidad === 'prefectura' && nombre.trim()))) {
+      throw new Error('El catálogo autorizado debe incluir una candidatura de Alcaldía y otra de Prefectura por organización.');
+    }
     return organizaciones;
   };
 }

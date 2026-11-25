@@ -1,4 +1,5 @@
 import { supabase } from '@/shared/data/supabaseClient';
+import { isAuthRetryableFetchError } from '@supabase/supabase-js';
 import type { MesasRepository, OrganizacionesRepository } from '../../../domain/usecases/consultarMesas';
 import type { AsignacionesRepository, RegistroAsignacion } from '../../../domain/usecases/gestionarAsignaciones';
 
@@ -21,8 +22,8 @@ export const mesasAdapter: MesasRepository & OrganizacionesRepository & Asignaci
     }));
   },
   async listarOrganizaciones() {
-    const { data, error } = await supabase.from('organizacion').select('id, nombre').order('nombre');
-    if (error) throw error;
+    const { data, error } = await supabase.from('organizacion').select('id, nombre, candidaturas:candidato(dignidad, nombre)').order('nombre');
+    if (error) throw new Error(`Supabase no pudo leer las organizaciones (${error.code}): ${error.message}`);
     return data;
   },
   async historial() {
@@ -31,15 +32,24 @@ export const mesasAdapter: MesasRepository & OrganizacionesRepository & Asignaci
     if (!Array.isArray(data)) throw new Error('El servicio no devolvió el historial.');
     return data as RegistroAsignacion[];
   },
-  async asignar(mesa, veedor, razon) {
-    const { error } = await supabase.rpc('asignar_veedor_recinto', { mesa, veedor, razon });
+  async asignar(mesa, veedor, razon, asignacionEsperada) {
+    const { error } = await supabase.rpc('cambiar_veedor_jrv', {
+      mesa, veedor, razon, asignacion_esperada: asignacionEsperada,
+    });
     if (error) throw new Error(error.message);
   },
 };
 
 export async function comprobarCuentaActiva(autorId: string) {
   const { data, error } = await supabase.auth.getSession();
+  if (isAuthRetryableFetchError(error)) throw new Error('Network request failed', { cause: error });
   if (error || data.session?.user.id !== autorId) {
     throw new Error('La sesión cambió. Vuelve a iniciar sesión para consultar el catálogo.');
   }
+}
+
+export async function consultarVersionCatalogo(): Promise<number | null> {
+  const { data, error } = await supabase.from('catalog_version').select('version').order('version', { ascending: false }).limit(1).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.version ?? null;
 }

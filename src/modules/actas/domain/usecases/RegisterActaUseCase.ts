@@ -34,6 +34,13 @@ export class RegisterActaUseCase {
   constructor(private readonly actaRepo: RegistroActaRepository) {}
 
   async execute(input: RegisterActaInput): Promise<Acta> {
+    if (!input.autorId || !input.jrvId || !input.fotoPath.trim() ||
+        !Number.isFinite(Date.parse(input.capturedAt)) ||
+        !Number.isFinite(input.accuracy) || input.accuracy < 0 ||
+        !['alcaldia', 'prefectura'].includes(input.dignidad) ||
+        !['buena', 'dudosa'].includes(input.calidadFoto)) {
+      throw new ValidationError('Completa los datos del acta, la fotografía y la ubicación.');
+    }
     // ----- Basic shape validation -----
     if (!Number.isFinite(input.lat) || !Number.isFinite(input.lon) ||
         Math.abs(input.lat) > 90 || Math.abs(input.lon) > 180) {

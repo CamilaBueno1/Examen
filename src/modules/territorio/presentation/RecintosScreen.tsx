@@ -1,18 +1,20 @@
 import { useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 
+import AuthField from '@/modules/authentication/presentation/components/AuthField';
+import SubmitButton from '@/modules/authentication/presentation/components/SubmitButton';
 import { MesasAutorizadas } from '@/modules/territorio/presentation/MesasAutorizadas';
+import SaveCelebrationCard from '@/shared/presentation/SaveCelebrationCard';
+import { AppButton, AppPage, Card, ScreenHeader, StatusBanner, TricolorStripe } from '@/shared/presentation/Ui';
 import { recintos } from '../recintosProvider';
 
-import { AppButton, AppPage, Card, ScreenHeader, StatusBanner } from '@/shared/presentation/Ui';
-
 const schema = z.object({
-  nombre: z.string().trim().min(2, 'Ingresa el nombre del recinto.').max(150),
-  parroquia: z.string().trim().min(2, 'Ingresa la parroquia.').max(100),
+  nombre: z.string().trim().min(2, 'Ingresa el nombre oficial del recinto.').max(150),
+  parroquia: z.string().trim().min(2, 'Ingresa la parroquia del cantón.').max(100),
   numeroJrv: z.number().int().min(1, 'Debe existir al menos una JRV.').max(200, 'Máximo 200 JRV.'),
 });
 
@@ -41,54 +43,92 @@ export default function RecintosScreen() {
   return (
     <AppPage>
       <ScreenHeader
-        eyebrow="GESTIÓN TERRITORIAL"
+        eyebrow="ORGANIZACIÓN TERRITORIAL"
         title="Territorio electoral"
-        subtitle="Administra los recintos y las JRV de Pichincha · Rumiñahui."
+        subtitle="Administra los recintos y las mesas electorales de Pichincha · Cantón Rumiñahui."
       />
-      {created ? <StatusBanner tone="success" title="Recinto creado" detail="Las JRV quedaron registradas y el catálogo se actualizó." /> : null}
+      {created ? (
+        <SaveCelebrationCard
+          tone="success"
+          scene="record"
+          eyebrow="PADRÓN ACTUALIZADO"
+          title="Recinto y mesas registrados"
+          detail="Las mesas consecutivas quedaron habilitadas y disponibles en el padrón electoral."
+        />
+      ) : null}
       {error ? <StatusBanner tone="error" title="No se completó el registro" detail={error} /> : null}
       <Card>
-        <Text className="mb-1 text-lg font-bold text-brand-ink">Agregar recinto</Text>
-        <Text className="mb-4 text-sm leading-5 text-brand-muted">Se crearán las JRV consecutivas desde la número 1.</Text>
-        {([
-          { name: 'nombre', label: 'Nombre del recinto', placeholder: 'Ej. Unidad Educativa' },
-          { name: 'parroquia', label: 'Parroquia', placeholder: 'Ej. Sangolquí' },
-        ] as const).map(({ name, label, placeholder }) => (
-          <View key={name} className="mb-3">
-            <Text className="mb-1 text-sm font-bold text-brand-ink">{label}</Text>
-            <Controller control={form.control} name={name} render={({ field }) => (
-              <TextInput
-                accessibilityLabel={label}
+        <View className="mb-2 flex-row items-center justify-between">
+          <Text className="font-electoral-bold text-lg text-brand-ink">Agregar nuevo recinto electoral</Text>
+          <TricolorStripe width={32} height={4} />
+        </View>
+        <Text className="font-electoral mb-4 text-xs leading-5 text-brand-muted">
+          Se crearán automáticamente las Juntas Receptoras del Voto (JRV) numeradas desde la 1.
+        </Text>
+        <View className="gap-3.5">
+          <Controller
+            control={form.control}
+            name="nombre"
+            render={({ field }) => (
+              <AuthField
+                label="Nombre del recinto electoral"
+                icon={{ ios: 'building.columns', android: 'account_balance', web: 'account_balance' }}
+                error={form.formState.errors.nombre?.message}
                 autoCapitalize="words"
-                maxLength={name === 'nombre' ? 150 : 100}
-                placeholder={placeholder}
+                maxLength={150}
+                placeholder="Ej. Unidad Educativa Juan de Salinas"
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
-                className="min-h-14 rounded-2xl border border-brand-line bg-brand-paper px-4 text-brand-ink"
               />
-            )} />
-            {form.formState.errors[name] ? <Text accessibilityRole="alert" className="mt-1 text-sm text-brand-danger">{form.formState.errors[name]?.message}</Text> : null}
-          </View>
-        ))}
-        <Text className="mb-1 text-sm font-bold text-brand-ink">Cantidad de JRV</Text>
-        <Controller control={form.control} name="numeroJrv" render={({ field }) => (
-          <TextInput
-            accessibilityLabel="Cantidad de JRV"
-            keyboardType="number-pad"
-            value={String(field.value)}
-            onChangeText={(text) => { if (/^\d{0,3}$/.test(text)) field.onChange(Number(text)); }}
-            className="min-h-14 rounded-2xl border border-brand-line bg-brand-paper px-4 text-brand-ink"
+            )}
           />
-        )} />
-        {form.formState.errors.numeroJrv ? <Text accessibilityRole="alert" className="mt-1 text-sm text-brand-danger">{form.formState.errors.numeroJrv.message}</Text> : null}
-        <View className="mt-4">
-          <AppButton label="Guardar recinto" onPress={submit} loading={form.formState.isSubmitting} />
+          <Controller
+            control={form.control}
+            name="parroquia"
+            render={({ field }) => (
+              <AuthField
+                label="Parroquia (Cantón Rumiñahui)"
+                icon={{ ios: 'map', android: 'map', web: 'map' }}
+                error={form.formState.errors.parroquia?.message}
+                autoCapitalize="words"
+                maxLength={100}
+                placeholder="Ej. Sangolquí / San Pedro de Taboada"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
+          <Controller
+            control={form.control}
+            name="numeroJrv"
+            render={({ field }) => (
+              <AuthField
+                label="Cantidad de JRV en el recinto"
+                icon={{ ios: 'number.square', android: 'pin', web: 'pin' }}
+                error={form.formState.errors.numeroJrv?.message}
+                keyboardType="number-pad"
+                value={String(field.value)}
+                onChangeText={(text) => {
+                  if (/^\d{0,3}$/.test(text)) field.onChange(Number(text));
+                }}
+              />
+            )}
+          />
+          <SubmitButton
+            label="Registrar recinto y generar JRV"
+            loadingLabel="Guardando recinto…"
+            loading={form.formState.isSubmitting}
+            onPress={submit}
+          />
         </View>
       </Card>
-      <Text accessibilityRole="header" className="text-lg font-bold text-brand-ink">Recintos y mesas asignados</Text>
+      <Text accessibilityRole="header" className="font-electoral-bold text-base text-brand-ink">
+        Catálogo de recintos y JRV autorizados
+      </Text>
       <MesasAutorizadas refreshKey={refreshKey} />
-      <AppButton label="Volver al panel" variant="secondary" onPress={() => router.replace('/provincial')} />
+      <AppButton label="Volver al panel provincial" variant="secondary" onPress={() => router.replace('/provincial')} />
     </AppPage>
   );
 }

@@ -17,7 +17,7 @@ export const revisionActasAdapter: RevisionActasRepository = {
     if (error) throw new Error(error.message);
     return data.signedUrl;
   },
-  async aprobar(foto) {
+  async validarEvidencia(foto) {
     const { error } = await supabase.rpc('validar_evidencia_recinto', { foto });
     if (error) throw new Error(error.message);
   },

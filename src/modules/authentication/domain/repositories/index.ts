@@ -11,7 +11,7 @@ export interface AuthRepository {
   signOut(): Promise<void>;
 
   /** Register a new user (admin flow). */
-  createUser(user: Omit<User, 'id' | 'status'>): Promise<{ user: User; temporaryPassword: string }>;
+  createUser(user: Omit<User, 'id' | 'status'>, asignacionEsperada?: string): Promise<{ user: User; temporaryPassword: string }>;
 
   /** Authenticate with email/password. */
   signIn(email: string, password: string): Promise<User>;
