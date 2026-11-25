@@ -1,3 +1,5 @@
+// Guía: Dibuja las líneas de contorno decorativas del fondo.
+
 import { StyleSheet, View } from 'react-native';
 
 /**

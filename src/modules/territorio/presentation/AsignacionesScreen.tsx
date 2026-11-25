@@ -1,3 +1,5 @@
+// Guía: Muestra el historial de asignaciones y permite reemplazar al responsable de una JRV.
+
 import { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';

@@ -1,3 +1,5 @@
+// Guía: Muestra animaciones móviles según el resultado de una operación.
+
 import { Text, View } from 'react-native';
 import LottieView from 'lottie-react-native';
 

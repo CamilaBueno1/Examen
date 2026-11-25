@@ -1,3 +1,5 @@
+// Guía: Muestra los registros guardados en el teléfono y sus estados de envío.
+
 import { useState } from 'react';
 import { Image, Text, View } from 'react-native';
 import { router } from 'expo-router';

@@ -1,3 +1,5 @@
+// Guía: Presenta el formulario de votos, el total de sufragantes y la cuadratura.
+
 import { useEffect } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { Controller, useWatch, type UseFormReturn } from 'react-hook-form';

@@ -1,3 +1,5 @@
+// Guía: Evalúa la seguridad de la contraseña y explica los criterios al usuario.
+
 export type NivelSeguridadClave = 'vacia' | 'no_segura' | 'poco_segura' | 'segura' | 'muy_segura';
 
 export interface ReglaSeguridadClave {

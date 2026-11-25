@@ -1,3 +1,5 @@
+// Guía: Lee la cola por autor y actualiza el estado de cada envío en SQLite.
+
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 
 import type { ColaActas, OperacionActa } from '../../domain/usecases/enviarPendientes';

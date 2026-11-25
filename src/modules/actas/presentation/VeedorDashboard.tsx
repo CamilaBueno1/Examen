@@ -1,3 +1,5 @@
+// Guía: Presenta las mesas autorizadas y el estado de los registros del veedor.
+
 import { router } from 'expo-router';
 import { Text, View } from 'react-native';
 import AppIcon from '@/shared/presentation/AppIcon';

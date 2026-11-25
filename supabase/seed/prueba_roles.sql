@@ -1,3 +1,5 @@
+-- Guía: Prepara datos de demostración para probar permisos de los tres roles.
+
 -- SOLO PARA PRUEBAS en un proyecto desechable, después de catalog.sql.
 -- Los correos y cédulas son ficticios; no usar cuentas ni datos personales reales.
 -- Crear y confirmar previamente los tres usuarios en Authentication > Users.

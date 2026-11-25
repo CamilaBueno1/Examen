@@ -1,3 +1,5 @@
+// Guía: Muestra el seguimiento provincial y el diagnóstico técnico de Sentry.
+
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';

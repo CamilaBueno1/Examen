@@ -1,3 +1,5 @@
+// Guía: Presenta el formulario de acceso y dirige al usuario según su estado.
+
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import {
   Image,

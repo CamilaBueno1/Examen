@@ -1,3 +1,5 @@
+// Guía: Envía los conteos, sube la foto y solicita al servidor confirmar el respaldo.
+
 import { File } from 'expo-file-system';
 import { supabase } from '@/shared/data/supabaseClient';
 import type { RecepcionActas } from '../../domain/usecases/enviarPendientes';

@@ -1,3 +1,5 @@
+-- Guía: Actualiza las reglas de reemplazo y revalida los permisos al respaldar evidencia.
+
 -- Los índices únicos parciales existentes se conservan. No se modifica historial.
 begin;
 

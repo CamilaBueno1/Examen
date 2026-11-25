@@ -1,3 +1,5 @@
+// Guía: Describe provincias, recintos, mesas y asignaciones del dominio territorial.
+
 /**
  * Domain entities for the Territorio module.
  */

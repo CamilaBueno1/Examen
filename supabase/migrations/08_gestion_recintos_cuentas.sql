@@ -1,3 +1,5 @@
+-- Guía: Añade operaciones administrativas para recintos, activación, asignaciones y bajas.
+
 begin;
 
 alter table public.recinto

@@ -1,3 +1,5 @@
+// Guía: Define el acceso a la evidencia y calcula indicadores de calidad fotográfica.
+
 export interface EvidenciaSource {
   leerPosicion(): Promise<{
     coords: { latitude: number; longitude: number; accuracy: number | null };

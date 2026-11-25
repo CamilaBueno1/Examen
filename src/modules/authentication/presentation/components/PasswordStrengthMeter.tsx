@@ -1,3 +1,5 @@
+// Guía: Muestra visualmente los criterios de seguridad de la contraseña.
+
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 

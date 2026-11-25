@@ -1,3 +1,5 @@
+// Guía: Guía la verificación por correo y el primer cambio de contraseña.
+
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';

@@ -1,3 +1,5 @@
+// Guía: Configura Sentry, filtra datos sensibles y guarda diagnósticos pendientes en SQLite.
+
 import { Platform } from 'react-native';
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
@@ -162,6 +164,7 @@ export async function reportOperationalError(
  * Reenvía errores pendientes desde SQLite.errores_pendientes al recuperar conexión
  * con política acotada de retención (máximo 5 intentos).
  */
+// Reintenta los reportes técnicos de SQLite cuando vuelve la conexión.
 export async function flushPendingErrors(): Promise<number> {
   if (!dsn) return 0;
   const db = await getErrorDb();

@@ -1,3 +1,5 @@
+// Guía: Presenta el motivo gráfico electoral de la pantalla de acceso.
+
 import { useCallback, useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {

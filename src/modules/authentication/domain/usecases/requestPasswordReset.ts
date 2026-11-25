@@ -1,3 +1,5 @@
+// Guía: Solicita un correo de recuperación a través del repositorio.
+
 import type { AuthRepository } from '../repositories';
 
 /** Use‑case to request a password‑reset email. */

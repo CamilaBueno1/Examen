@@ -1,3 +1,5 @@
+// Guía: Conserva en SQLite las mesas y candidaturas autorizadas de cada cuenta.
+
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 
 let connection: Promise<SQLiteDatabase> | undefined;

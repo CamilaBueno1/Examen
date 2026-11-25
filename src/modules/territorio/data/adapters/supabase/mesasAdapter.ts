@@ -1,3 +1,5 @@
+// Guía: Consulta JRV, candidaturas, versión y asignaciones en Supabase.
+
 import { supabase } from '@/shared/data/supabaseClient';
 import { isAuthRetryableFetchError } from '@supabase/supabase-js';
 import type { MesasRepository, OrganizacionesRepository } from '../../../domain/usecases/consultarMesas';

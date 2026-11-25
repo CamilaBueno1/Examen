@@ -1,3 +1,5 @@
+// Guía: Reúne botones, tarjetas, encabezados y avisos con el estilo compartido.
+
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {

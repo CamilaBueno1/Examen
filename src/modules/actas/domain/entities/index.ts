@@ -1,3 +1,5 @@
+// Guía: Define las estructuras de actas, votos y correcciones en el dominio.
+
 /**
  * Domain entities for the Actas module.
  */

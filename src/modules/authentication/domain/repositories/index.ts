@@ -1,3 +1,5 @@
+// Guía: Define el contrato de autenticación que implementa el adaptador.
+
 /**
  * Domain interfaces for the Authentication module.
  */

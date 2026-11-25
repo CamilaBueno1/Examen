@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Guía: Script de plantilla que mueve o elimina archivos al reiniciar el proyecto.
+
 
 /**
  * This script is used to reset the project to a blank state.

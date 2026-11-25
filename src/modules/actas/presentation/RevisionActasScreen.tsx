@@ -1,5 +1,7 @@
+// Guía: Muestra actas recibidas, evidencia e historial y permite preparar correcciones.
+
 import { useCallback, useEffect, useState } from 'react';
-import { Image, Pressable, Text, TextInput, View } from 'react-native';
+import { Image, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -36,6 +38,7 @@ function Detalle({ acta, cuenta, online, onChange }: { acta: ActaRemota; cuenta:
   const syncRevision = useSincronizacionActasStore((state) => state.revision);
   const [foto, setFoto] = useState<string>();
   const [descargandoFoto, setDescargandoFoto] = useState(false);
+  const [intentoFoto, setIntentoFoto] = useState(0);
   const [errorFoto, setErrorFoto] = useState('');
   const [fotoVisible, setFotoVisible] = useState(false);
   const [validandoFoto, setValidandoFoto] = useState(false);
@@ -58,21 +61,12 @@ function Detalle({ acta, cuenta, online, onChange }: { acta: ActaRemota; cuenta:
 
   useEffect(() => {
     let active = true;
-    const local = acta.foto_id ? consultaRevisionLocal.foto(cuenta, acta.foto_id) : undefined;
     if (online) void revisionActas.historial(acta.id).then(
       (data) => {
         if (active) setHistorial(data);
       },
       () => {},
     );
-    if (online && !local && acta.storage_path) {
-      void revisionActas.foto(acta.storage_path).then(
-        (url) => {
-          if (active) setFoto(url);
-        },
-        () => {},
-      );
-    }
     if (user?.id && user.role !== 'provincial') {
       void propuestasCorreccion.consultarPropuesta(user.id, acta.id).then(
         (value) => {
@@ -86,7 +80,30 @@ function Detalle({ acta, cuenta, online, onChange }: { acta: ActaRemota; cuenta:
     return () => {
       active = false;
     };
-  }, [acta.id, acta.foto_id, acta.storage_path, cuenta, online, user, syncRevision]);
+  }, [acta.id, online, user, syncRevision]);
+
+  const userId = user?.id;
+  const { foto_id: fotoId, storage_path: ruta } = acta;
+  // Abre la copia local o descarga la imagen al recuperar la conexión.
+  useEffect(() => {
+    if (!online || !userId || !fotoId || !ruta) return;
+    let vigente = true;
+    void Promise.resolve().then(async () => {
+      if (!vigente) return;
+      setErrorFoto('');
+      setDescargandoFoto(true);
+      const uri = await (Platform.OS === 'web'
+        ? revisionActas.foto(ruta)
+        : consultaRevisionLocal.descargarFoto(userId, cuenta, fotoId, ruta));
+      if (!uri) throw new Error('FOTO_NO_GUARDADA');
+      if (vigente) setFoto(uri);
+    }).catch(() => {
+      if (vigente) setErrorFoto('No se pudo descargar la fotografía. Comprueba tu conexión y vuelve a intentar.');
+    }).finally(() => {
+      if (vigente) setDescargandoFoto(false);
+    });
+    return () => { vigente = false; };
+  }, [online, userId, cuenta, fotoId, ruta, intentoFoto]);
 
   const submit = form.handleSubmit(async (values) => {
     if (!user) return;
@@ -134,20 +151,6 @@ function Detalle({ acta, cuenta, online, onChange }: { acta: ActaRemota; cuenta:
   const fotoDisponible = (acta.foto_id ? consultaRevisionLocal.foto(cuenta, acta.foto_id) : undefined) ?? (online ? foto : undefined);
   const fotoDescargada = acta.foto_id ? consultaRevisionLocal.foto(cuenta, acta.foto_id) : undefined;
 
-  async function descargarParaConsultar() {
-    if (!online || !user || !acta.foto_id || !acta.storage_path || descargandoFoto) return;
-    setErrorFoto('');
-    setDescargandoFoto(true);
-    try {
-      const uri = await consultaRevisionLocal.descargarFoto(user.id, cuenta, acta.foto_id, acta.storage_path);
-      if (!uri) throw new Error('FOTO_NO_GUARDADA');
-      setFoto(uri);
-    } catch {
-      setErrorFoto('No se pudo guardar la fotografía. Comprueba tu conexión y vuelve a intentar.');
-    } finally {
-      setDescargandoFoto(false);
-    }
-  }
   return (
     <Card>
       <View className="gap-3.5">
@@ -180,18 +183,20 @@ function Detalle({ acta, cuenta, online, onChange }: { acta: ActaRemota; cuenta:
             onError={() => setFotoVisible(false)}
           />
         ) : acta.foto_id && !online ? (
-          <Text className="font-electoral text-xs text-brand-muted">Conéctate y toca «Descargar foto» para verla después sin internet.</Text>
+          <Text className="font-electoral text-xs text-brand-muted">La foto se descargará automáticamente al recuperar la conexión.</Text>
         ) : null}
         {fotoDescargada ? (
           <Text className="font-electoral text-xs text-brand-muted">Fotografía guardada para consultar sin internet.</Text>
-        ) : online && acta.foto_id && acta.storage_path ? (
-          <AppButton label="Descargar foto" variant="secondary" loading={descargandoFoto} onPress={() => void descargarParaConsultar()} />
+        ) : online && descargandoFoto ? (
+          <StatusBanner tone="info" busy title="Descargando fotografía…" />
+        ) : online && errorFoto ? (
+          <AppButton label="Reintentar descarga" variant="secondary" onPress={() => setIntentoFoto((intento) => intento + 1)} />
         ) : null}
-        {errorFoto ? <StatusBanner tone="warning" title="Descarga pendiente" detail={errorFoto} /> : null}
+        {online && errorFoto ? <StatusBanner tone="warning" title="Descarga pendiente" detail={errorFoto} /> : null}
 
         {online && user?.role === 'coordinator' && user.status === 'ACTIVE' && puedeValidarEvidencia(acta) ? (
           <AppButton
-            label={fotoRespaldada ? 'Fotografía validada' : validandoFoto ? 'Validando fotografía…' : 'Validar fotografía'}
+            label={fotoRespaldada ? 'Fotografía respaldada' : validandoFoto ? 'Confirmando revisión…' : 'Confirmar foto de calidad dudosa'}
             disabled={!fotoVisible || validandoFoto || fotoRespaldada}
             onPress={() => void validarFoto()}
           />
@@ -353,6 +358,7 @@ export default function RevisionActasScreen() {
   return <RevisionPorCuenta key={cuenta} id={user.id} cuenta={cuenta} />;
 }
 
+// Separa la lista y las fotos por cuenta y rol.
 function RevisionPorCuenta({ id, cuenta }: { id: string; cuenta: string }) {
   const user = useSessionStore((state) => state.user);
   const online = useConnectivityStore((state) => state.connectivity === 'online');

@@ -1,3 +1,5 @@
+-- Guía: Define recepción idempotente, respaldo privado de fotos, resultados y notificaciones.
+
 begin;
 
 create table if not exists electoral_privado.operaciones_acta (

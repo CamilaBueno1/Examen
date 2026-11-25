@@ -1,3 +1,5 @@
+// Guía: Mantiene la sesión, el rol y el estado de restauración en Zustand.
+
 import { create } from 'zustand';
 
 import type { User } from '../domain/entities';

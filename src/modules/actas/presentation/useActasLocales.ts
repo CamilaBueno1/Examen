@@ -1,3 +1,5 @@
+// Guía: Actualiza la lista del autor activo cuando cambia el estado de sus actas.
+
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 

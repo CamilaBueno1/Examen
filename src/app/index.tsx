@@ -1,8 +1,11 @@
+// Guía: Espera la recuperación de sesión y abre el panel correspondiente al rol.
+
 import { Redirect } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import LoginScreen from '@/modules/authentication/presentation/LoginScreen';
 import { useSessionStore } from '@/modules/authentication/presentation/sessionStore';
 
+// Ruta inicial: espera la sesión y envía a cada usuario al flujo correspondiente.
 export default function Index() {
   const user = useSessionStore((state) => state.user);
   const hydrated = useSessionStore((state) => state.hydrated);

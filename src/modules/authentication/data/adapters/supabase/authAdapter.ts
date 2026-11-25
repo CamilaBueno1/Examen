@@ -1,7 +1,8 @@
+// Guía: Ejecuta el inicio de sesión, alta, activación y recuperación con Supabase.
+
 /**
- * Supabase authentication adapter implementing the AuthRepository interface.
- * Uses the shared Supabase client singleton.
- * Maps Supabase Auth and the public.profile table to the domain model.
+ * Conecta la autenticación con Supabase y convierte el perfil remoto
+ * al modelo User que utiliza el dominio.
  */
 
 import { supabase } from '@/shared/data/supabaseClient';
@@ -76,12 +77,14 @@ function mapSupabaseUser(
 export class SupabaseAuthAdapter implements AuthRepository {
   private readonly local = new SqliteAuthDao();
 
+  // Borra el perfil local al cerrar sesión para impedir su restauración sin red.
   async signOut(): Promise<void> {
     await this.local.clearUser();
     const { error } = await supabase.auth.signOut({ scope: 'local' });
     if (error && !isAuthNetworkFailure(error)) throw new Error(error.message);
   }
 
+  // Con red consulta el perfil remoto. Sin red recupera el último perfil activo.
   async restoreSession(): Promise<User | null> {
     const [cachedUser, offline] = await Promise.all([
       this.local.loadUser(),
@@ -125,10 +128,7 @@ export class SupabaseAuthAdapter implements AuthRepository {
     return user;
   }
 
-  /**
-   * Creates a new user using the Supabase admin endpoint.
-   * A temporary password is set and the profile row is created with status 'PENDING'.
-   */
+  // La función del servidor crea el perfil pendiente y entrega la clave temporal.
   async createUser(
     user: Omit<User, 'id' | 'status'>,
     asignacionEsperada?: string,
@@ -171,7 +171,7 @@ export class SupabaseAuthAdapter implements AuthRepository {
     };
   }
 
-  /** Sign‑in with email and password, returning a populated User entity. */
+  // Autentica las credenciales y descarga el perfil electoral de esa cuenta.
   async signIn(email: string, password: string): Promise<User> {
     if (await isOffline()) throw new Error(connectionRequired);
     const { data: signInData, error: signInError } =
@@ -211,9 +211,8 @@ export class SupabaseAuthAdapter implements AuthRepository {
     return user;
   }
 
-  /** Verify an OTP sent to the user's email. */
+  // Comprueba el código de un solo uso enviado al correo.
   async verifyOtp(email: string, otp: string): Promise<boolean> {
-    // Supabase provides `verifyOtp` for password‑less flows. We reuse it here.
     const { error } = await supabase.auth.verifyOtp({
       type: 'email',
       email,
@@ -226,7 +225,7 @@ export class SupabaseAuthAdapter implements AuthRepository {
     return true;
   }
 
-  /** Change the password of an existing user. */
+  // Cambia la clave y solicita al servidor activar el perfil.
   async changePassword(userId: string, newPassword: string): Promise<void> {
     const { error } = await supabase.auth.updateUser({
       password: newPassword,
@@ -240,11 +239,13 @@ export class SupabaseAuthAdapter implements AuthRepository {
     }
   }
 
+  // Solicita un código para una cuenta que ya fue creada por un coordinador.
   async enviarCodigoInicial(email: string): Promise<void> {
     const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
     if (error) throw new Error(`No se pudo enviar el código: ${error.message}`);
   }
 
+  // Verifica el código y la identidad antes de permitir el cambio de clave.
   async completarPrimerAcceso(userId: string, email: string, otp: string, password: string): Promise<void> {
     const { data, error } = await supabase.auth.verifyOtp({ email, token: otp, type: 'email' });
     if (error || data.user?.id !== userId) throw new Error('El código no es válido para esta cuenta o caducó.');
@@ -253,7 +254,7 @@ export class SupabaseAuthAdapter implements AuthRepository {
     await this.changePassword(userId, password);
   }
 
-  /** Trigger a password‑reset email. */
+  // Solicita el correo con el código de recuperación.
   async requestPasswordReset(email: string): Promise<void> {
     const { error } = await supabase.auth.resetPasswordForEmail(email);
     if (error) {
@@ -261,6 +262,7 @@ export class SupabaseAuthAdapter implements AuthRepository {
     }
   }
 
+  // Recuperación: verifica el código, cambia la clave y cierra la sesión temporal.
   async resetWithCode(email: string, code: string, password: string): Promise<void> {
     const { error: verificationError } = await supabase.auth.verifyOtp({ email, token: code, type: 'recovery' });
     if (verificationError) throw new Error('El código no es válido o caducó. Solicita un código nuevo.');

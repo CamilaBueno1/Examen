@@ -1,3 +1,5 @@
+-- Guía: Restringe la lectura de organizaciones a perfiles activos autenticados.
+
 begin;
 
 alter table public.organizacion enable row level security;

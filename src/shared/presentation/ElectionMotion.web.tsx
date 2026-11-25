@@ -1,3 +1,5 @@
+// Guía: Adapta la presentación de las escenas electorales a la web.
+
 import AppIcon from '@/shared/presentation/AppIcon';
 import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 

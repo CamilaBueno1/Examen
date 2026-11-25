@@ -1,3 +1,5 @@
+-- Guía: Define el ámbito de consulta de JRV y el cálculo de avance por recinto.
+
 begin;
 
 alter table public.recinto

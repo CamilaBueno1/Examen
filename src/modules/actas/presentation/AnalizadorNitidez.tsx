@@ -1,3 +1,5 @@
+// Guía: Prepara la foto en Android y iOS para evaluar su nitidez e iluminación.
+
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';

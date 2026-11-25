@@ -1,3 +1,5 @@
+// Guía: Coordina el formulario de votos, la cámara, el GPS y el guardado del acta.
+
 import { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -240,6 +242,7 @@ export default function ActaCaptureScreen() {
     }
   };
 
+  // Primero valida los votos; luego comprueba foto, GPS y permisos antes de guardar.
   const save = form.handleSubmit(async (values) => {
     updateCapture({ saveStatus: 'idle', saveDetail: '' });
     if (!Object.values(values).some((voto) => voto > 0) && !form.getFieldState('sufragantes').isTouched) {

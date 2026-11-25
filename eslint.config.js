@@ -1,3 +1,5 @@
+// Guía: Configura ESLint y las reglas de análisis del proyecto Expo.
+
 // https://docs.expo.dev/guides/using-eslint/
 const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');

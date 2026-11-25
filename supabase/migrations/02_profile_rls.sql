@@ -1,3 +1,5 @@
+-- Guía: Establece las políticas iniciales de acceso a perfiles.
+
 begin;
 
 alter table public.profile enable row level security;

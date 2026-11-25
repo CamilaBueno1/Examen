@@ -1,3 +1,5 @@
+// Guía: Describe el catálogo de mesas y valida que incluya las candidaturas requeridas.
+
 export interface MesaAutorizada {
   id: string;
   numero: number;

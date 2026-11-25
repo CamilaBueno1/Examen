@@ -1,3 +1,5 @@
+// Guía: Implementa el análisis de imagen para la versión web.
+
 import { forwardRef, useImperativeHandle } from 'react';
 
 import { calcularMetricasGrises, type MetricasImagen } from '../domain/usecases/leerEvidencia';

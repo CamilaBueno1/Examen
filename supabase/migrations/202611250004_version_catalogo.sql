@@ -1,3 +1,5 @@
+-- Guía: Protege la versión del catálogo y la incrementa cuando cambia su contenido.
+
 begin;
 
 create table if not exists public.catalog_version (

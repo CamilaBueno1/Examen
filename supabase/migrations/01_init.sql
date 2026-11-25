@@ -1,3 +1,5 @@
+-- Guía: Define las tablas iniciales y las reglas de cuadratura y versión.
+
 -- 01_init.sql – PostgreSQL schema for Control Electoral
 -- Generated per ADR‑02 (Supabase/PostgreSQL backend) and ADR‑03 (precarga catalog) 
 

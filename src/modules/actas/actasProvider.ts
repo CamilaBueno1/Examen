@@ -1,3 +1,5 @@
+// Guía: Conecta los casos de uso de actas con SQLite, evidencia y Supabase.
+
 import { SqliteActaDao } from './data/adapters/sqlite/actaDao';
 import { RegisterActaUseCase } from './domain/usecases/RegisterActaUseCase';
 import { consultarActasLocales } from './domain/usecases/consultarActasLocales';
@@ -9,6 +11,7 @@ import { revisionActasCache } from './data/adapters/sqlite/revisionActasCache';
 import { comprobarCuentaActiva } from '@/modules/territorio/data/adapters/supabase/mesasAdapter';
 import { isNetworkFailure } from '@/shared/data/networkFailure';
 
+// Conecta los casos de uso con los adaptadores de datos.
 const actasLocales = new SqliteActaDao();
 export const registrarActa = new RegisterActaUseCase(actasLocales);
 export const listarActasLocales = consultarActasLocales(actasLocales);
@@ -16,6 +19,7 @@ export const evidenciaCaptura = leerEvidencia(evidenciaExpo);
 export const revisionActas = revisarActas(revisionActasAdapter);
 export const propuestasCorreccion: PropuestasRepository = actasLocales;
 
+// Envía la corrección con su versión original y conserva el borrador si hay conflicto.
 export async function sincronizarCorrecciones(autor: string, vigente: () => boolean, alActualizar: () => void) {
   for (const fila of await actasLocales.correccionesPendientes(autor)) {
     if (!vigente()) return;
@@ -36,6 +40,7 @@ export async function sincronizarCorrecciones(autor: string, vigente: () => bool
 
 const descargasFotos = new Map<string, Promise<string | undefined>>();
 
+// La precarga y el detalle comparten una descarga por cuenta y fotografía.
 function descargarFoto(id: string, cuenta: string, fotoId: string, ruta: string) {
   const key = JSON.stringify([cuenta, fotoId]);
   const existente = descargasFotos.get(key);

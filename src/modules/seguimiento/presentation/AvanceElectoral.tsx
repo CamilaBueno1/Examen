@@ -1,3 +1,5 @@
+// Guía: Presenta indicadores por recinto y resultados preliminares por dignidad.
+
 import { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -131,7 +133,7 @@ export default function AvanceElectoral() {
             <View>
               <View className="mb-1 flex-row items-center justify-between gap-2">
                 <Text className="font-electoral flex-1 text-xs text-brand-muted">
-                  Mesas respaldadas (ambas fotografías validadas)
+                  Mesas respaldadas (ambas fotografías confirmadas)
                 </Text>
                 <Text className="font-electoral-bold text-xs text-brand-success">
                   {totales.respaldadas}/{totales.jrv}
@@ -266,7 +268,7 @@ export default function AvanceElectoral() {
 
             <View className="flex-row flex-wrap items-center justify-between gap-2 border-t border-brand-line pt-2">
               <Text className="font-electoral text-[11px] text-brand-muted">
-                Mesas con ambas fotografías validadas
+                Mesas con ambas fotografías confirmadas
               </Text>
               <View className="rounded-full bg-brand-success-soft px-2.5 py-0.5">
                 <Text className="font-electoral-bold text-xs text-brand-success">

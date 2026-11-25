@@ -1,3 +1,5 @@
+// Guía: Coordina el cierre de sesión y la salida del panel.
+
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';

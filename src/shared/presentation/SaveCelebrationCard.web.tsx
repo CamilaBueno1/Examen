@@ -1,3 +1,5 @@
+// Guía: Presenta la confirmación de guardado para la versión web.
+
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 

@@ -1,3 +1,5 @@
+// Guía: Presenta la confirmación visual de una operación guardada en móvil.
+
 import LottieView from 'lottie-react-native';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';

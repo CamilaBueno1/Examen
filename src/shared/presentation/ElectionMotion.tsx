@@ -1,3 +1,5 @@
+// Guía: Presenta animaciones electorales de Lottie en dispositivos móviles.
+
 import { View } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { useReducedMotion } from 'react-native-reanimated';

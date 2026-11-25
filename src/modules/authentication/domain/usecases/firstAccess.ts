@@ -1,3 +1,5 @@
+// Guía: Organiza la solicitud de código y la activación de una cuenta nueva.
+
 export interface FirstAccessRepository {
   enviarCodigoInicial(email: string): Promise<void>;
   completarPrimerAcceso(userId: string, email: string, otp: string, password: string): Promise<void>;

@@ -1,3 +1,5 @@
+// Guía: Verifica la jerarquía y crea la cuenta mediante Supabase Auth Admin.
+
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {

@@ -1,3 +1,5 @@
+// Guía: Proporciona un componente común para dibujar iconos de la interfaz.
+
 import { Platform, Text, View } from 'react-native';
 
 export type AppIconName = string | Partial<Record<'ios' | 'android' | 'web', string>>;

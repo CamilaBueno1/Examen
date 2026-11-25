@@ -1,3 +1,5 @@
+-- Guía: Define una tabla de conteos por organización en un script auxiliar de actas.
+
 -- 004_acta_votes.sql
 -- Votes table for actas (one row per organization per acta)
 

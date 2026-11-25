@@ -1,3 +1,5 @@
+-- Guía: Añade estados de cuenta y las operaciones de activación inicial.
+
 begin;
 
 create schema if not exists electoral_privado;

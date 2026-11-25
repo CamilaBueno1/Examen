@@ -1,3 +1,5 @@
+// Guía: Comprueba el rol activo y monta la navegación autorizada para ese rol.
+
 import { Redirect, Stack, router, usePathname, type Href } from 'expo-router';
 import AppIcon, { type AppIconName } from '@/shared/presentation/AppIcon';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';

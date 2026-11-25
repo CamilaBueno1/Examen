@@ -1,3 +1,5 @@
+// Guía: Controla las etapas, los reintentos y los rechazos al enviar actas.
+
 export interface OperacionActa {
   id: string;
   autorId: string;
@@ -16,6 +18,7 @@ export interface RecepcionActas {
   evidencia(operacion: OperacionActa, actaId: string): Promise<string>;
 }
 
+// Envía el conteo y confirma la evidencia en dos pasos con el mismo identificador.
 export function enviarPendientes(cola: ColaActas, remoto: RecepcionActas) {
   const notBefore = new Map<string, number>();
 
@@ -45,6 +48,7 @@ export function enviarPendientes(cola: ColaActas, remoto: RecepcionActas) {
       } catch (cause) {
         if (!vigente()) return;
         const message = cause instanceof Error ? cause.message : '';
+        // Los rechazos definitivos se conservan para revisión, sin reintento automático.
         const terminal = [
           'CONFLICTO_VERSION',
           'PERMISO_REVOCADO',

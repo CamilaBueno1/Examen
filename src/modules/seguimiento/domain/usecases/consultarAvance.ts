@@ -1,3 +1,5 @@
+// Guía: Define los contratos y consultas de avance por recinto y de resultados.
+
 export interface AvanceRecinto {
   recinto_id: string;
   recinto: string;

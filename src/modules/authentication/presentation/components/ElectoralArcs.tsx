@@ -1,3 +1,5 @@
+// Guía: Dibuja los arcos decorativos del fondo de autenticación.
+
 import { StyleSheet, Text, View } from 'react-native';
 
 import ElectionMotion, { type ElectionScene } from '@/shared/presentation/ElectionMotion';

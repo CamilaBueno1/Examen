@@ -1,3 +1,5 @@
+// Guía: Consulta y registra recintos y mesas con las operaciones del servidor.
+
 import { supabase } from '@/shared/data/supabaseClient';
 import type { RecintosRepository, CrearRecintoInput } from '../../../domain/usecases/gestionarRecintos';
 

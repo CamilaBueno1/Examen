@@ -1,3 +1,5 @@
+// Guía: Presenta la lista de recintos y el formulario de registro territorial.
+
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';

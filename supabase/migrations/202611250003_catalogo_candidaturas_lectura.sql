@@ -1,3 +1,5 @@
+-- Guía: Restringe la lectura de candidaturas a perfiles activos.
+
 begin;
 
 alter table public.candidato enable row level security;

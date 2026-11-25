@@ -1,3 +1,5 @@
+-- Guía: Añade el historial de veedores y las operaciones iniciales de asignación.
+
 begin;
 
 create or replace function public.historial_veedor_recinto()

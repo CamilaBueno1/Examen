@@ -1,3 +1,5 @@
+// Guía: Traduce las señales de NetInfo a un estado de conectividad del dominio.
+
 import type { ConnectivitySource } from '../../domain/repositories/connectivitySource';
 import { subscribeToNetInfo } from '../adapters/netInfoConnectivity';
 

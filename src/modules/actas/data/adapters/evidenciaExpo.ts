@@ -1,3 +1,5 @@
+// Guía: Obtiene la ubicación con Expo Location y consulta el tamaño de la foto.
+
 import { File } from 'expo-file-system';
 import * as Location from 'expo-location';
 

@@ -1,3 +1,5 @@
+// Guía: Configura Supabase con las variables públicas y la persistencia de sesión.
+
 /**
  * Supabase client singleton used by all adapters.
  * The URL and anon key must be provided via Expo environment variables

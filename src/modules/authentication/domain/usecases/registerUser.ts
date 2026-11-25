@@ -1,3 +1,5 @@
+// Guía: Valida los datos de identidad y contacto antes del alta de la cuenta.
+
 /**
  * Use-case: registrar un nuevo usuario desde el flujo administrativo.
  * Valida cédula ecuatoriana (algoritmo módulo 10) y número telefónico ecuatoriano en dominio puro (ADR-04).

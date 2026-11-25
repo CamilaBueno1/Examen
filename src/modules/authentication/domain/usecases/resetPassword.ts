@@ -1,3 +1,5 @@
+// Guía: Pasa el correo, el código y la nueva clave al repositorio de recuperación.
+
 export interface PasswordRecoveryRepository {
   resetWithCode(email: string, code: string, password: string): Promise<void>;
 }

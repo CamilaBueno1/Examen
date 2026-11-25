@@ -1,3 +1,5 @@
+-- Guía: Impide que existan dos actas para la misma JRV y dignidad.
+
 begin;
 
 -- El índice rechaza duplicados preexistentes sin modificar el historial.

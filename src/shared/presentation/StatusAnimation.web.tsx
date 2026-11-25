@@ -1,3 +1,5 @@
+// Guía: Adapta los indicadores de operación para el navegador.
+
 import { ActivityIndicator, Text, View } from 'react-native';
 
 export default function StatusAnimation({

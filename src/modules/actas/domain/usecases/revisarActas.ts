@@ -1,3 +1,5 @@
+// Guía: Aplica las reglas para corregir conteos y validar evidencia con el repositorio.
+
 export interface ActaRemota {
   id: string;
   numero: number;
@@ -51,7 +53,7 @@ export interface RevisionActasRepository {
 
 export function puedeValidarEvidencia(acta: ActaRemota): boolean {
   return !!acta.foto_id && !!acta.storage_path &&
-    (acta.evidencia === 'EVIDENCIA_RECIBIDA' || acta.evidencia === 'EN_REVISION');
+    acta.evidencia === 'EN_REVISION';
 }
 
 export function revisarActas(repository: RevisionActasRepository) {

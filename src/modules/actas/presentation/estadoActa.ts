@@ -1,3 +1,5 @@
+// Guía: Convierte los estados de sincronización en etiquetas y mensajes de interfaz.
+
 export interface ResumenEstadoActa {
   etiqueta: string;
   detalle: string;
@@ -17,12 +19,12 @@ const CATALOGO_ESTADOS: Record<string, ResumenEstadoActa> = {
   },
   EVIDENCIA_RECIBIDA: {
     etiqueta: 'Foto recibida',
-    detalle: 'Conteo y fotografía recibidos · falta validar la evidencia',
+    detalle: 'Conteo y fotografía recibidos · respaldo aún sin confirmar',
     categoria: 'revision',
   },
   EVIDENCIA_RESPALDADA: {
     etiqueta: 'Enviada y verificada ✓',
-    detalle: 'Conteo recibido y fotografía validada por el coordinador',
+    detalle: 'Conteo recibido y fotografía respaldada',
     categoria: 'enviada',
   },
   EN_REVISION: {

@@ -1,3 +1,5 @@
+-- Guía: Reserva las operaciones administrativas de alta al rol de servicio.
+
 begin;
 
 grant select, insert, delete on table public.profile to service_role;

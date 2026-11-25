@@ -1,3 +1,5 @@
+-- Guía: Comprueba vigencias, aislamiento territorial y reglas de evidencia con datos de prueba.
+
 -- Ejecutar en el esquema Examen después de aplicar la migración.
 -- Los datos de prueba son aislados y se descartan al final.
 begin;
@@ -20,6 +22,8 @@ declare
   cuenta_pendiente uuid := gen_random_uuid();
   veedor_pendiente uuid := gen_random_uuid();
   acta_anterior uuid := gen_random_uuid();
+  acta_dudosa uuid := gen_random_uuid();
+  operacion_dudosa uuid := gen_random_uuid();
   operacion_anterior uuid := gen_random_uuid();
   ruta_foto text;
   foto_anterior uuid;
@@ -100,22 +104,31 @@ begin
   exception when unique_violation then
     null;
   end;
-  insert into public.acta (jrv_id, dignidad, votos, blancos, nulos, sufragantes, creado_por)
-  values (jrv_1, 'prefectura', '{"total":0}', 0, 0, 0, veedor_a);
+  insert into public.acta (id, jrv_id, dignidad, votos, blancos, nulos, sufragantes, creado_por)
+  values (acta_dudosa, jrv_1, 'prefectura', '{"total":0}', 0, 0, 0, veedor_a);
   ruta_foto := cuenta_a::text || '/' || acta_anterior::text || '.jpg';
   insert into electoral_privado.operaciones_acta (operacion, autor, acta_id, datos)
-  values (operacion_anterior, cuenta_a, acta_anterior, '{}');
-  insert into public.foto_acta (acta_id, storage_path, calidad)
-  values (acta_anterior, ruta_foto, 'buena')
-  returning id into foto_anterior;
+  values (operacion_anterior, cuenta_a, acta_anterior, '{"calidadFoto":"buena"}'),
+         (operacion_dudosa, cuenta_a, acta_dudosa, '{"calidadFoto":"dudosa"}');
+  insert into storage.objects (bucket_id, name)
+  values ('actas-privadas', ruta_foto),
+         ('actas-privadas', cuenta_a::text || '/' || acta_dudosa::text || '.jpg');
+  update public.asignacion_veedor set desde = now() - interval '1 second'
+    where jrv_id = jrv_1 and veedor_id = veedor_a and hasta is null;
+  perform set_config('request.jwt.claim.sub', cuenta_a::text, true);
   set local role authenticated;
-  if not exists (select 1 from public.actas_vigentes_autorizadas() a
-                 where a.id = acta_anterior and a.evidencia = 'EVIDENCIA_RECIBIDA') then
-    raise exception 'Una foto sin validar debe figurar como recibida';
+  if public.registrar_evidencia(operacion_anterior) <> 'EVIDENCIA_RESPALDADA'
+     or public.registrar_evidencia(operacion_anterior) <> 'EVIDENCIA_RESPALDADA'
+     or public.registrar_evidencia(operacion_dudosa) <> 'EN_REVISION' then
+    raise exception 'La buena debe respaldarse automáticamente y la dudosa quedar en revisión';
   end if;
+  reset role;
+  select id into foto_anterior from public.foto_acta where acta_id = acta_dudosa;
+  perform set_config('request.jwt.claim.sub', cuenta_coordinador::text, true);
+  set local role authenticated;
   perform public.validar_evidencia_recinto(foto_anterior);
   if not exists (select 1 from public.actas_vigentes_autorizadas() a
-                 where a.id = acta_anterior and a.evidencia = 'EVIDENCIA_RESPALDADA') then
+                 where a.id = acta_dudosa and a.evidencia = 'EVIDENCIA_RESPALDADA') then
     raise exception 'La foto validada debe figurar como respaldada';
   end if;
   perform set_config('request.jwt.claim.sub', cuenta_a::text, true);

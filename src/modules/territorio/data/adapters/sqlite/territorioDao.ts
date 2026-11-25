@@ -1,3 +1,5 @@
+// Guía: Define las operaciones SQLite para entidades y asignaciones territoriales.
+
 import * as SQLite from 'expo-sqlite';
 import { v4 as uuidv4 } from 'uuid';
 

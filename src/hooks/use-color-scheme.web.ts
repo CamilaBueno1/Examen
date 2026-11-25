@@ -1,3 +1,5 @@
+// Guía: Consulta el esquema de color del navegador durante la ejecución en web.
+
 import { useColorScheme as useRNColorScheme } from 'react-native';
 
 /**

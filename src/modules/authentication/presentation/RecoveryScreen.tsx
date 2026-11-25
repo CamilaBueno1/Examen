@@ -1,3 +1,5 @@
+// Guía: Permite solicitar un código y establecer una nueva contraseña.
+
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';

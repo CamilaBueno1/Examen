@@ -1,3 +1,5 @@
+// Guía: Presenta el botón de autenticación y su estado de carga.
+
 import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 import AppIcon from '@/shared/presentation/AppIcon';

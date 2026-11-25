@@ -1,3 +1,5 @@
+// Guía: Recibe los datos para el alta jerárquica y muestra la credencial inicial.
+
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';

@@ -1,3 +1,5 @@
+// Guía: Declara los tipos de importación de las hojas CSS.
+
 declare module "*.module.css" {
   const classes: { [key: string]: string };
   export default classes;

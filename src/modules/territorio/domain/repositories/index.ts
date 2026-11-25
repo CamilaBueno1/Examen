@@ -1,3 +1,5 @@
+// Guía: Define las operaciones de almacenamiento de las entidades territoriales.
+
 /**
  * Repository interfaces for the Territorio module.
  */

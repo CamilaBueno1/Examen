@@ -1,3 +1,5 @@
+// Guía: Muestra el avance del recinto y acceso a sus operaciones autorizadas.
+
 import { router } from 'expo-router';
 import { Text, View } from 'react-native';
 

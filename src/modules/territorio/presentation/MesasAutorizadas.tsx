@@ -1,3 +1,5 @@
+// Guía: Controla la carga y muestra las mesas que el usuario puede consultar.
+
 import { useCallback, useState, type ReactNode } from 'react';
 import { Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';

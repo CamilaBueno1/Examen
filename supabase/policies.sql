@@ -1,3 +1,5 @@
+-- Guía: Conserva políticas históricas. Las políticas vigentes se aplican desde las migraciones.
+
 -- Obsoleto: no ejecutar este archivo.
 -- Sus políticas preceden al esquema por perfil/rol vigente y referencian
 -- public.outbox y public.error_log, que no pertenecen a la arquitectura actual.

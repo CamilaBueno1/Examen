@@ -1,3 +1,5 @@
+// Guía: Publica el estado de red en Zustand para que las pantallas puedan reaccionar.
+
 import { useEffect } from 'react';
 import { create } from 'zustand';
 

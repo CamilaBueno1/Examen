@@ -1,3 +1,5 @@
+// Guía: Inicia los envíos al reconectar y evita ejecuciones simultáneas.
+
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { create } from 'zustand';

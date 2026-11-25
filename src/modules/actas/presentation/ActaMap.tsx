@@ -1,3 +1,5 @@
+// Guía: Muestra el GPS de captura y la posición del recinto en un mapa interno.
+
 import { StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 

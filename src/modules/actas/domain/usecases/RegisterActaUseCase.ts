@@ -1,7 +1,8 @@
-// src/modules/actas/domain/usecases/RegisterActaUseCase.ts
+// Guía: Comprueba la evidencia, la ubicación y la cuadratura antes de solicitar el guardado.
+
 /**
- * Use case: register a new acta (electoral result) for a given JRV and dignidad.
- * Performs pure domain validations according to ADR‑07.
+ * Valida las reglas del acta y delega el guardado al repositorio.
+ * El dominio puede comprobar el conteo sin usar Expo ni la base de datos.
  */
 import type { Acta, VotoActa } from '../entities';
 import { ValidationError } from '@/shared/errors';
@@ -14,12 +15,12 @@ export interface RegisterActaInput {
   recintoLon: number | null;
   jrvId: string;
   dignidad: 'alcaldia' | 'prefectura';
-  capturedAt: string; // ISO datetime
+  capturedAt: string; // Fecha y hora de captura en formato ISO.
   lat: number;
   lon: number;
   accuracy: number;
-  fotoPath: string; // local path, later uploaded
-  votos: VotoActa[]; // exactly 5 entries (one per organization)
+  fotoPath: string; // Ruta del archivo local que se enviará al sincronizar.
+  votos: VotoActa[]; // Un conteo por cada una de las cinco organizaciones.
   votosBlancos: number;
   votosNulos: number;
   totalSufragantes: number;
@@ -41,7 +42,7 @@ export class RegisterActaUseCase {
         !['buena', 'dudosa'].includes(input.calidadFoto)) {
       throw new ValidationError('Completa los datos del acta, la fotografía y la ubicación.');
     }
-    // ----- Basic shape validation -----
+    // Comprueba que la captura tenga identificación, fecha, foto y ubicación válidas.
     if (!Number.isFinite(input.lat) || !Number.isFinite(input.lon) ||
         Math.abs(input.lat) > 90 || Math.abs(input.lon) > 180) {
       throw new ValidationError('Se requieren coordenadas válidas.');
@@ -53,7 +54,7 @@ export class RegisterActaUseCase {
     if (input.votos.length !== 5 || new Set(input.votos.map((voto) => voto.organizacionId)).size !== 5) {
       throw new ValidationError('Se requieren votos para cinco organizaciones distintas.');
     }
-    // ----- Sum validation -----
+    // Los cinco conteos, más blancos y nulos, deben sumar los sufragantes.
     const sumOrg = input.votos.reduce((s, v) => s + v.votos, 0);
     const totalCalc = sumOrg + input.votosBlancos + input.votosNulos;
     if (totalCalc !== input.totalSufragantes) {

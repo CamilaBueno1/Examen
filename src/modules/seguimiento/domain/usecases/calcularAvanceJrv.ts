@@ -1,3 +1,5 @@
+// Guía: Distingue una JRV reportada de una JRV con las dos evidencias respaldadas.
+
 import type { ActasVigentes } from '../entities/actasVigentes';
 
 export function calcularAvanceJrv({ alcaldia, prefectura }: ActasVigentes) {

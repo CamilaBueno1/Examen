@@ -1,3 +1,5 @@
+-- Guía: Define consulta autorizada, validación fotográfica, corrección e historial de versiones.
+
 begin;
 
 -- Las escrituras pasan por RPC para conservar ámbito, versión e historial.

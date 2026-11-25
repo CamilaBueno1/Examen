@@ -1,3 +1,5 @@
+// Guía: Configura el empaquetado de Metro y la integración con Uniwind y Sentry.
+
 const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 const { withUniwindConfig } = require('uniwind/metro');
 

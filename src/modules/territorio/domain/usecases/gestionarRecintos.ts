@@ -1,3 +1,5 @@
+// Guía: Valida la ubicación y los datos necesarios para registrar un recinto.
+
 export interface CrearRecintoInput {
   nombre: string;
   parroquia: string;

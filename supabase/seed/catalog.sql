@@ -1,3 +1,5 @@
+-- Guía: Carga un catálogo ficticio para pruebas locales y registra su versión inicial.
+
 -- SOLO PARA PRUEBAS: los nombres de organizaciones, candidaturas y recintos son ficticios.
 -- No es un padrón electoral ni debe cargarse en un entorno real.
 -- Alcance simulado: Provincia Pichincha, Cantón Rumiñahui.

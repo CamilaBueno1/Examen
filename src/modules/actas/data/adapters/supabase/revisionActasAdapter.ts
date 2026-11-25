@@ -1,3 +1,5 @@
+// Guía: Consulta actas e historial y envía correcciones o validaciones de evidencia a Supabase.
+
 import { supabase } from '@/shared/data/supabaseClient';
 import type { ActaRemota, RevisionActasRepository, RevisionAnterior } from '../../../domain/usecases/revisarActas';
 

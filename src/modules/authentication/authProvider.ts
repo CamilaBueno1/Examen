@@ -1,3 +1,5 @@
+// Guía: Conecta las reglas de autenticación con el adaptador de Supabase.
+
 // Punto de composición del módulo de autenticación (ADR-01).
 // Igual que actasProvider.ts y mesasProvider.ts: aquí, y solo aquí, se conecta
 // la implementación de data (SupabaseAuthAdapter) con los casos de uso de domain.

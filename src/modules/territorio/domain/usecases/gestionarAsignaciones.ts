@@ -1,3 +1,5 @@
+// Guía: Comprueba los datos y el motivo antes de asignar o reemplazar un veedor.
+
 export interface RegistroAsignacion {
   id: string;
   jrv_id: string;

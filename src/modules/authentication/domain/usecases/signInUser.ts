@@ -1,3 +1,5 @@
+// Guía: Delega la autenticación con correo y contraseña al repositorio.
+
 import type { User } from '../entities';
 import type { AuthRepository } from '../repositories';
 

@@ -1,3 +1,5 @@
+// Guía: Consulta el historial local únicamente para el autor solicitado.
+
 import type { RegisterActaInput } from './RegisterActaUseCase';
 
 export interface ActaLocal {

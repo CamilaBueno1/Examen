@@ -1,3 +1,5 @@
+// Guía: Define opciones de Tailwind para la interfaz.
+
 // tailwind.config.cjs - NativeWind configuration for the project
 /** @type {import('tailwindcss').Config} */
 module.exports = {

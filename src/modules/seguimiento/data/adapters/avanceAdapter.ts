@@ -1,8 +1,11 @@
+// Guía: Consulta los totales SQL y escucha cambios electorales en Realtime.
+
 import { supabase } from '@/shared/data/supabaseClient';
 import type { AvanceRecinto, AvanceRepository, ResultadoCandidatura } from '../../domain/usecases/consultarAvance';
 
 let sequence = 0;
 
+// PostgreSQL calcula los totales autorizados y Realtime avisa cuándo consultarlos otra vez.
 export const avanceAdapter: AvanceRepository = {
   async consultar() {
     const { data, error } = await supabase.rpc('avance_electoral');

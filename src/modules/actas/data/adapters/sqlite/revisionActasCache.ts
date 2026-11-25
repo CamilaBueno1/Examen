@@ -1,3 +1,5 @@
+// Guía: Conserva el listado recibido y las fotos descargadas por cuenta y rol.
+
 import { File, Paths } from 'expo-file-system';
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 import { Platform } from 'react-native';

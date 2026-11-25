@@ -1,3 +1,5 @@
+// Guía: Ejecuta las pruebas automatizadas de dominio y adaptadores con datos de prueba.
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');

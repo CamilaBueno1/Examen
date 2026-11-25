@@ -1,3 +1,5 @@
+// Guía: Declara las operaciones de persistencia que usan las reglas de actas.
+
 /**
  * Repository interfaces for the Actas module.
  */

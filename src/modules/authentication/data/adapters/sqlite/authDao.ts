@@ -1,8 +1,11 @@
+// Guía: Conserva la sesión y el perfil local para recuperarlos sin conexión.
+
 import { Platform } from 'react-native';
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 
 import type { User } from '../../../domain/entities';
 
+// Reutiliza la conexión SQLite para las dos tablas de autenticación.
 let connection: Promise<SQLiteDatabase> | undefined;
 
 function database() {
@@ -36,6 +39,7 @@ function hasWebStorage() {
   return Platform.OS === 'web' && typeof globalThis.localStorage !== 'undefined';
 }
 
+// Guarda la sesión del SDK. En web usa el almacenamiento del navegador.
 export const supabaseAuthStorage = {
   async getItem(key: string): Promise<string | null> {
     if (hasWebStorage()) return globalThis.localStorage.getItem(key);
@@ -67,6 +71,7 @@ export const supabaseAuthStorage = {
   },
 };
 
+// Mantiene una copia del perfil para restaurar el acceso sin conexión.
 export class SqliteAuthDao {
   async saveUser(user: User): Promise<void> {
     const db = await database();

@@ -1,3 +1,5 @@
+// Guía: Presenta los campos compactos de acceso con etiqueta y error.
+
 import { useEffect, useState, type ComponentRef, type ReactNode, type Ref } from 'react';
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import AppIcon, { type AppIconName } from '@/shared/presentation/AppIcon';

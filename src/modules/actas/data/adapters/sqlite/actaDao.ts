@@ -1,3 +1,5 @@
+// Guía: Guarda capturas, conteos, envíos pendientes y propuestas de corrección en SQLite.
+
 import * as SQLite from 'expo-sqlite';
 import { File, Paths } from 'expo-file-system';
 import { v4 as uuidv4 } from 'uuid';
@@ -131,6 +133,7 @@ export class SqliteActaDao implements ActaRepository, RegistroActaRepository, Ac
     };
     try {
       new File(input.fotoPath).copy(photo);
+      // Acta, votos y envío pendiente se escriben juntos en SQLite.
       await db.withExclusiveTransactionAsync(async (transaction) => {
         const previous = await transaction.getFirstAsync<{ id: string }>(
           `SELECT a.id FROM actas a JOIN outbox_actas o ON o.acta_id = a.id
